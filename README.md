@@ -1,4 +1,4 @@
-# Two-phase Flash Calculation for Reservoir Simulation
+# Two-phase Flash Calculation for Phase Behavoir in Petroleum Engineering
 
 This package is written by C++ programming language. It has the following functions:
 1. Phase stability test.
