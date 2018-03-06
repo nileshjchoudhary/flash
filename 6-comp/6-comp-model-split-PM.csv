@@ -1,0 +1,11 @@
+type        split_PM
+prop_file   6-comp-prop.csv
+bin_file    6-comp-bin.csv
+z_file      6-comp-z.csv
+T           350
+P_min       10.0
+P_max       180.0
+dxx         0.00333
+dP          3.33
+selected_component 0
+output      6-comp-data-single-testing-set1

@@ -1,0 +1,11 @@
+type        diagram
+prop_file   3-comp-prop.csv
+bin_file    3-comp-bin.csv
+z_file      3-comp-z.csv
+T_min       200.0
+T_max       340.0
+P_min       10.0
+P_max       80.0
+dP          0.1
+dT          0.5
+output      3-comp-data-single

@@ -1,0 +1,14 @@
+type        split_data
+prop_file   6-comp-prop.csv
+bin_file    6-comp-bin.csv
+z_file      6-comp-z.csv
+split_ann   6-comp-split-calculation
+split_ann_level   0
+T_min       100.0
+T_max       520.0
+P_min       10.0
+P_max       190.0
+dx          0.0933
+dP          3.33
+dT          3.33
+output      6-comp-data-all-05

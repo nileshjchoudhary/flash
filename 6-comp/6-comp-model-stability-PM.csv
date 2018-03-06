@@ -1,0 +1,11 @@
+type        stability_PM
+prop_file   6-comp-prop.csv
+bin_file    6-comp-bin.csv
+z_file      6-comp-z.csv
+T           350.0
+P_min       10.0
+P_max       150.0
+dP          2.33
+dxx         0.01333
+selected_component 0
+output      6-comp-data-single

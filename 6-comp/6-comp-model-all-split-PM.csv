@@ -1,0 +1,11 @@
+type        split_PM_data
+prop_file   6-comp-prop.csv
+bin_file    6-comp-bin.csv
+z_file      6-comp-z.csv
+T           350
+P_min       10.0
+P_max       160.0
+dxx         0.02
+dx          0.1
+dP          4.0
+output      6-comp-data-all-coarse

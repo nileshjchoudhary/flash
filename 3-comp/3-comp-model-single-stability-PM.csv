@@ -1,0 +1,12 @@
+type        stability_PM
+prop_file   3-comp-prop.csv
+bin_file    3-comp-bin.csv
+z_file      3-comp-z.csv
+T           280.0
+P_min       10.0
+P_max       110.0
+dxx         0.01
+dx          0.1
+dP          1.0
+selected_component 0
+output      3-comp-data-single

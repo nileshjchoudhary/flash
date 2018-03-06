@@ -1,0 +1,12 @@
+type        envelope_data
+prop_file   10-comp-prop.csv
+bin_file    10-comp-bin.csv
+z_file      10-comp-z.csv
+T_min       100.0
+T_max       900.0
+P_min       10.0
+P_max       450.0
+dx          0.2
+dP          1.0
+dT          3.0
+output      10-comp-data-all-dx1-dp1-dt1
