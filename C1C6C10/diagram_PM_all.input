@@ -1,0 +1,11 @@
+type        envelope_PM_data
+prop_file   C1C6C10-prop.csv
+bin_file    C1C6C10-bin.csv
+z_file      C1C6C10-z.csv
+T           500.0
+P_min       10.0
+P_max       200.0
+dP          1.0
+dx          0.1
+dxx         0.03
+output      C1C6C10-diagram-PM

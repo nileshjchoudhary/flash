@@ -1,0 +1,12 @@
+type        envelope_data
+prop_file   C1C6C10-prop.csv
+bin_file    C1C6C10-bin.csv
+z_file      C1C6C10-z.csv
+T_min       100.0
+T_max       900.0
+P_min       10.0
+P_max       200.0
+dP          0.2
+dT          0.2
+dx          0.1
+output      C1C6C10-diagram

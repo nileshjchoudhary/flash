@@ -361,40 +361,14 @@ double flash_calculation_predict_value_with_ANN(FLASH_ANN *ann,
     x = input;
     for (i = 0; i < level - 1; i++) {
         y[i] = flash_calculation_tensor_matmul(x, W[i], NULL);
-#if 0
-        printf("x * W[%d]:\n", i);
-        flash_calculation_tensor_dump(y[i]);
-#endif
-
         flash_calculation_tensor_add(y[i], b[i], y[i]);
-#if 0
-        printf("x * W[%d] + b[%d]:\n", i, i);
-        flash_calculation_tensor_dump(y[i]);
-#endif
-
         flash_calculation_tensor_softmax(y[i], y[i]);
-#if 0
-        printf("softmax(x * W[%d] + b[%d]):\n", i, i);
-        flash_calculation_tensor_dump(y[i]);
-#endif
-
         x = y[i];
     }
 
     y[level - 1] = flash_calculation_tensor_matmul(x, W[level - 1], NULL);
-#if 0
-    printf("x * W[%d]:\n", level - 1, level - 1);
-    flash_calculation_tensor_dump(y[level - 1]);
-#endif
-
     flash_calculation_tensor_add(y[level - 1], b[level - 1], y[level - 1]);
-#if 0
-    printf("x * W[%d] + b[%d]:\n", level - 1, level - 1);
-    flash_calculation_tensor_dump(y[level - 1]);
-#endif
-
     value = y[level - 1]->value[0];
-    //printf("value: %e\n", value);
 
     for (i = 0; i < level; i++) {
         flash_calculation_tensor_free(&(y[i]));
@@ -1392,7 +1366,17 @@ void flash_calculation_calculate_fugacity(PHASE *phase)
 
 void flash_calculation_calculate_phase_density(PHASE *phase)
 {
-    phase->density = phase->eos->pres / (phase->Z * phase->R * phase->eos->temp);
+    int i;
+    double mole_den, mole_weight;
+
+    mole_den = phase->eos->pres / (phase->Z * phase->R * phase->eos->temp);
+
+    mole_weight = 0.0;
+    for (i = 0; i < phase->ncomp; i++) {
+        mole_weight += phase->mf[i] * phase->eos->comp_list->comp[i].MW;
+    }
+
+    phase->density = mole_den * mole_weight;
 }
 
 
@@ -1832,7 +1816,7 @@ int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
     if (sum_K < 1e-2) 
         return -1;
 
-    if (sum_Y < 1.0) {
+    if (sum_Y <= 1.0 + 1e-8) {
         return 1;
     }
     else {
@@ -1944,7 +1928,7 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
            otherwise break 
            if system_status is 'Unstable' or system_status is 'Stable':
            break */
-        if (system_status == 0) {
+        if (system_status != -1) {
             break;
         }
     }
@@ -2487,7 +2471,7 @@ void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, 
         else if (search == 1)
             eos->pres += search_step;
         
-        if (eos->pres < 1.0 || eos->pres > 1000.0) {
+        if (eos->pres < 1.0 || eos->pres > 1500.0) {
             Pu = 1.0;
             Ps = 1.0;
             break;
@@ -2548,7 +2532,7 @@ void flash_calculation_saturation_calculation_search_Tu_Ts(EOS *eos, double *z, 
         else if (search == 1)
             eos->temp += search_step;
         
-		if (eos->temp < 1.0 || eos->temp > 1000.0) {
+		if (eos->temp < 1.0 || eos->temp > 1500.0) {
             Tu = 1.0;
             Ts = 1.0;
             break;
@@ -3632,7 +3616,7 @@ double flash_calculation_calculate_initial_K_derivative_with_temperature(EOS *eo
 double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos, double *z, 
         double T, double Fv, double P_max, double P_min, double P_est, double *K)
 {
-    /* default values:   P_max: 1000.0, P_min: 1.0, P_est: -1.0, K: NULL */
+    /* default values:   P_max: 1500.0, P_min: 1.0, P_est: -1.0, K: NULL */
     int itr, ncomp = eos->ncomp, i;
     double F, *x_l, *x_v, *G, *dG, error, *dv, dK;
     PHASE *phase_L, *phase_V;
@@ -3797,7 +3781,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
 double * flash_calculation_calculate_status_at_fixed_pressure_and_Fv(EOS *eos, double *z, 
         double P, double Fv, double T_max, double T_min, double T_est, double *K) 
 {
-    /* default values:   T_max: 1000.0, T_min: 1.0, T_est: -1.0, K: NULL */
+    /* default values:   T_max: 1500.0, T_min: 1.0, T_est: -1.0, K: NULL */
     int ncomp = eos->ncomp, itr;
 	double Tu_Ts[2], F, dK, *x_l, *x_v, *G, *dG, error, *dv;
 	PHASE *phase_L, *phase_V;
@@ -4707,7 +4691,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
 
                 if (T > 1.0) {
                     K = flash_calculation_calculate_status_at_fixed_pressure_and_Fv(eos, z, P, Fv,
-                            1000.0, 1.0, T, K);
+                            1500.0, 1.0, T, K);
                     T = eos->temp;
                 }
                 else {
@@ -4717,7 +4701,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
                     }
 
                     K = flash_calculation_calculate_status_at_fixed_pressure_and_Fv(eos, z, P, Fv,
-                            1000.0, 1.0, T_start0, K);
+                            1500.0, 1.0, T_start0, K);
                     T = eos->temp;
                 }
 
@@ -4764,7 +4748,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
                 T -= dT;
                 if (P > 1.0) {
                     K = flash_calculation_calculate_status_at_fixed_temperature_and_Fv(eos, z, T, Fv,
-                            1000.0, 1.0, P, K);
+                            1500.0, 1.0, P, K);
                     P = eos->pres;
                 }
                 else {
@@ -4774,7 +4758,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
                     }
 
                     K = flash_calculation_calculate_status_at_fixed_temperature_and_Fv(eos, z, T, Fv, 
-                            1000.0, 1.0, (pd->pl[ith]->P[pd->pl[ith]->n - 1] + P_last) * 0.5, K);
+                            1500.0, 1.0, (pd->pl[ith]->P[pd->pl[ith]->n - 1] + P_last) * 0.5, K);
                     P = eos->pres;
                 }
                 
@@ -7042,9 +7026,6 @@ void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list,
     free(x);
 }
 
-
-
-
 int main(int argc, char **argv) {
     char *model_file, *prop_file, *binary_file, *z_file;
     COMP_LIST *comp_list;
@@ -7368,14 +7349,6 @@ int main(int argc, char **argv) {
     printf("Split calculation iteration: %d\n", split_itr);
     printf("Split calculation ANN prediction time: %lf\n", split_pred_time);
     printf("Split calculation solve time: %lf\n", split_solve_time);
-
-
-#if 0
-    flash_calculation_memory_usage(MPI_COMM_WORLD, &mem_peak);
-    if (myrank == 0) {
-        printf("mem_peak: %lf\n", mem_peak);
-    }
-#endif
 
     if (fsa != NULL) {
         flash_calculation_split_ann_model_free(&fsa);
