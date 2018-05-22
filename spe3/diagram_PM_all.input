@@ -1,0 +1,11 @@
+type        envelope_PM_data
+prop_file   spe3-prop.csv
+bin_file    spe3-bin.csv
+z_file      spe3-z.csv
+T           366.483
+P_min       10.0
+P_max       300.0
+dP          2.0
+dx          0.2
+dxx         0.05
+output      spe3-diagram-PM
