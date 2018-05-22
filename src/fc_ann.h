@@ -1,0 +1,57 @@
+#ifndef FC_ANN
+typedef struct FLASH_TENSOR_ {
+    int nr;
+    int nc;
+
+    double *value;
+
+} FLASH_TENSOR;
+
+typedef struct FLASH_ANN_ {
+    FLASH_TENSOR **W;
+    FLASH_TENSOR **b;
+
+    int level;
+} FLASH_ANN;
+
+typedef struct FLASH_STAB_ANN_ {
+    FLASH_ANN *ann_upper;
+    FLASH_ANN *ann_down;
+
+    double safeguard;
+    double delta_p;
+
+} FLASH_STAB_ANN;
+
+typedef struct FLASH_SPLIT_ANN_ {
+    FLASH_ANN *ann_F;
+    FLASH_ANN **ann_K;
+
+    int nK;
+
+} FLASH_SPLIT_ANN;
+
+FLASH_TENSOR * flash_calculation_tensor_read(char *file);
+void flash_calculation_tensor_free(FLASH_TENSOR **ft);
+FLASH_TENSOR * flash_calculation_tensor_softmax(FLASH_TENSOR *ft, FLASH_TENSOR *result);
+FLASH_TENSOR * flash_calculation_tensor_matmul(FLASH_TENSOR *ft1, FLASH_TENSOR *ft2, 
+        FLASH_TENSOR *result);
+FLASH_TENSOR * flash_calculation_tensor_add(FLASH_TENSOR *ft1, FLASH_TENSOR *ft2,
+        FLASH_TENSOR *result);
+FLASH_ANN * flash_calculation_ann_model_new(char *file_head, int level);
+void flash_calculation_ann_model_free(FLASH_ANN **ann);
+double flash_calculation_predict_value_with_ANN(FLASH_ANN *ann, 
+        FLASH_TENSOR *input);
+FLASH_SPLIT_ANN * flash_calculation_split_ann_model_new(char *file_head, int level, 
+        int ncomp);
+FLASH_STAB_ANN * flash_calculation_stab_ann_model_new(char *file_head, int level,
+        double safeguard, double delta_p);
+int flash_calculation_split_ann_predict(FLASH_SPLIT_ANN *fsa, double *input, 
+        int n, double *F, double *K);
+int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
+        int n, int *stable);
+void flash_calculation_split_ann_model_free(FLASH_SPLIT_ANN **fsa);
+void flash_calculation_stab_ann_model_free(FLASH_STAB_ANN **fsa);
+
+#define FC_ANN
+#endif
