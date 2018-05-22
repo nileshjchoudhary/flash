@@ -6,6 +6,6 @@ T_min       300.0
 T_max       600.0
 P_min       10.0
 P_max       110.0
-dP          2.0
-dT          2.0
+dP          1.0
+dT          1.0
 output      spe3-diagram

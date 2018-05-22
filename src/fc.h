@@ -10,10 +10,12 @@
 #include <assert.h>
 
 #include "fc_csv.h"
+#include "fc_utils.h"
 #include "fc_comp.h"
 #include "fc_eos.h"
 #include "fc_phase.h"
 #include "fc_solver.h"
+#include "fc_ann.h"
 #include "fc_stab.h"
 #include "fc_split.h"
 #include "fc_sat.h"
@@ -22,4 +24,3 @@
 #include "fc_diagram.h"
 #include "fc_model.h"
 #include "fc_data_gen.h"
-#include "fc_ann.h"

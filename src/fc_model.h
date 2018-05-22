@@ -14,6 +14,12 @@ typedef struct FLASH_MODEL_ {
     double dP;
     double dT;
 
+    int mole;
+    int *mole_range;
+    int n_mole_range;
+    int *mole_dx;
+    int n_mole_dx;
+
     double dx;
 
     double *F;

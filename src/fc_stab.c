@@ -1,4 +1,10 @@
 #include "fc.h"
+
+static int verb = 0;
+static int stab_itr = 0;
+static double stab_solve_time = 0.;
+static double stab_pred_time = 0.;
+
 /* ## 2. Stability Test
 # The following code is designed for stability test. */
 

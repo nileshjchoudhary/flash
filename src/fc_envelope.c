@@ -220,8 +220,10 @@ int flash_calculation_search_stable_temperature(COMP_LIST *comp_list,
 
 
 /* ### Saturation Envelope Construction
-# We devide the temperature into some intervals wit $\delta T$. At each $T$, we calculate the saturation pressure. 
-We first calculate the upper saturation pressure (bubble point pressure), then the lower saturation pressure (dew point pressure).
+# We devide the temperature into some intervals wit $\delta T$. 
+    At each $T$, we calculate the saturation pressure. 
+    We first calculate the upper saturation pressure (bubble point pressure), 
+    then the lower saturation pressure (dew point pressure).
 */
 PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *eos, 
         double *z, double T_start, double T_end, double dT, double P_est, double dP)
@@ -310,14 +312,86 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
 			}
 		}
 	}
-    
+
+    while (1) {
+        int count0, *insert_index, insert_count, insert_count0;
+        int flag_dP = 1;
+        double *insert_P, *insert_T, *Ps_tmp, *Ts_tmp;
+
+        count0 = count;
+
+        insert_count = 0;
+        insert_index = malloc(count0 * sizeof(*insert_index));
+        insert_P = malloc(count0 * sizeof(*insert_P));
+        insert_T = malloc(count0 * sizeof(*insert_T));
+
+        for (i = 0; i < count0 - 1; i++) {
+            if (pe->Ps[i] > 1.0 && pe->Ps[i + 1] > 1.0) {
+                if (fabs(pe->Ps[i] - pe->Ps[i + 1]) > dP
+                        && fabs(pe->Ts[i] - pe->Ts[i + 1]) > dT * 0.01) {
+                    flag_dP = 0;
+                    
+                    insert_index[insert_count] = i;
+
+                    insert_T[insert_count] = (pe->Ts[i] + pe->Ts[i + 1]) * 0.5;
+                    insert_P[insert_count] 
+                        = flash_calculation_saturation_calculation(eos, z, 
+                                insert_T[insert_count], pe->Ps[i], 0, dP * 0.1);
+
+                    printf("insert: Ps: %e %e, Ts: %e %e, insert_P: %e\n", pe->Ps[i], pe->Ps[i + 1],
+                            pe->Ts[i], pe->Ts[i + 1], insert_P[insert_count]);
+
+                    insert_count++;
+                }
+            }
+        }
+
+        //printf("insert_count: %d\n", insert_count);
+
+        Ps_tmp = malloc(2 * (insert_count + count) * sizeof(double));
+        Ts_tmp = malloc(2 * (insert_count + count) * sizeof(double));
+
+        insert_count0 = 0;
+        count0 = 0;
+        for (i = 0; i < count; i++) {
+            Ps_tmp[count0] = pe->Ps[i];
+            Ts_tmp[count0] = pe->Ts[i];
+            count0++;
+
+            if (insert_count0 < insert_count 
+                    && i == insert_index[insert_count0]) {
+                Ps_tmp[count0] = insert_P[insert_count0];
+                Ts_tmp[count0] = insert_T[insert_count0];
+                count0++;
+                insert_count0++;
+            }
+        }
+
+        count += insert_count;
+
+        free(pe->Ps);
+        free(pe->Ts);
+
+        pe->Ps = Ps_tmp;
+        pe->Ts = Ts_tmp;
+
+        free(insert_index);
+        free(insert_P);
+        free(insert_T);
+
+        if (flag_dP) {
+            break;
+        }
+    }
+
+
     flag = 0;
     flag2 = 0;
     flag3 = 0;
     P = pe->Ps[count - 1] - 1.0;
     if (P < 1.0)
         P = 1.0;
-	last = count;
+    last = count;
 
     for (i = last - 1; i > 0; i--) {
         //printf("----- Down : temperature %lf\n", pe->Ts[i]);
@@ -404,32 +478,6 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
     for (i = 0; i < pe_pm->n; i++) {
         xv = pe_pm->xs[i][selected_component];
         P = pe_pm->Ps[i];
-
-#if 0
-        if (i > 1) {
-            if (fabs(xv - pe_pm->xs[i - 1][selected_component] > 1e-5)) {
-                double dP, dxv, rate, rate0;
-
-                dP = P - pe_pm->Ps[i - 1];
-                dxv = xv - pe_pm->xs[i - 1][selected_component];
-                rate = dP / dxv;
-
-                dP = pe_pm->Ps[i - 2] - pe_pm->Ps[i - 1];
-                dxv = pe_pm->xs[i - 2][selected_component] - pe_pm->xs[i - 1][selected_component];
-
-                if (dxv == 0.0) {
-                    rate0 = rate;
-                }
-                else {
-                    rate0 = dP / dxv;
-                }
-
-                if (rate > rate0 + 80.0 || rate + 80.0 < rate0) {
-                    continue;
-                }
-            }
-        }
-#endif
 
         if (i == 0 || (i > 0 && xv > pe_pm->xs[i - 1][selected_component])
                 || (xv == pe_pm->xs[i - 1][selected_component] && flag)) {

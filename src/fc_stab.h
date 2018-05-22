@@ -40,8 +40,8 @@ void flash_calculation_calculate_stability_equilibrium_equation_derivative(PHASE
         double *X_t, double *dD);
 double flash_calculation_calculate_stability_residual(PHASE *phase, PHASE *phase_t, double *X_t, double *res);
 void flash_calculation_QNSS_method_update_X(double *dD, double *D, double *X_t, int ncomp);
-int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
-int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double tol)
+int flash_calculation_check_stability(double *X_t, double *z, int ncomp);
+int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double tol);
 
 
 void flash_calculation_output_stability_analysis_map(STABILITY_MAP *sm, 

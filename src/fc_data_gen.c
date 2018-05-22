@@ -29,7 +29,7 @@ static int flash_calculation_generate_x_number(double start,
     return sum;
 }
 
-static int flash_calculation_generate_x(double start, double end, double dx, 
+int flash_calculation_generate_x(double start, double end, double dx, 
         int ncomp, double min_x, double ***x_list)
 {
     int i, j, k, count, sum, sum2, ncomp2;
@@ -128,6 +128,153 @@ static int flash_calculation_generate_x(double start, double end, double dx,
     return sum;
 }
 
+static int flash_calculation_generate_x_number_new(int mole, int *mole_range, 
+        int *mole_dx, int ncomp)
+{
+    int i, sum, sum2;
+    int mole_max, mole_min, dx;
+
+    if (mole_range == NULL) {
+        mole_min = 1;
+        mole_max = mole;
+    }
+    else {
+        mole_min = mole_range[0];
+        mole_max = mole_range[1];
+    }
+
+    if (mole_dx == NULL) {
+        dx = 1;
+    }
+    else {
+        dx = mole_dx[0];
+    }
+
+    mole_max = mole_max > mole ? mole : mole_max;
+    mole_min = mole_min < 1 ? 1 : mole_min;
+
+    if (ncomp == 2) {
+        printf("ncomp: %d, max: %d, min: %d,\n", ncomp, mole_max, mole_min);
+        sum = (mole_max - mole_min + 1) / dx;
+
+        return sum;
+    }
+
+    sum2 = (mole_max - mole_min + 1) / dx;
+    if (sum2 >= mole - ncomp + 1) {
+        sum2 = mole - ncomp + 1;
+    }
+    sum = 0;
+    for (i = 0; i < sum2; i++) {
+        if (mole_range == NULL) {
+            sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                    NULL, NULL, ncomp - 1);
+        }
+        else {
+            sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                    mole_range + 2, mole_dx + 1, ncomp - 1);
+        }
+    }
+
+    return sum;
+}
+
+int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
+        int ncomp, double ***x_list)
+{
+    int i, j, k, sum, sum2, count;
+    double **x_list0;
+    int mole_max, mole_min, dx;
+
+    if (mole_range == NULL) {
+        mole_min = 1;
+        mole_max = mole;
+    }
+    else {
+        mole_min = mole_range[0];
+        mole_max = mole_range[1];
+    }
+
+    if (mole_dx == NULL) {
+        dx = 1;
+    }
+    else {
+        dx = mole_dx[0];
+    }
+
+    mole_max = mole_max > mole ? mole : mole_max;
+    mole_min = mole_min < 1 ? 1 : mole_min;
+
+    if (ncomp == 2) {
+        sum = (mole_max - mole_min + 1) / dx;
+
+        printf("mole: %d\n", mole);
+
+        *x_list = malloc(sum * sizeof(**x_list));
+        x_list0 = *x_list;
+
+        for (i = 0; i < sum; i++) {
+            x_list0[i] = malloc(2 * sizeof(double));
+
+            x_list0[i][0] = (double)(i + mole_min) * dx / mole;
+            x_list0[i][1] = (double)(mole - (i + mole_min) * dx) / mole;
+        }
+
+        return sum;
+    }
+
+    sum = flash_calculation_generate_x_number_new(mole, mole_range, 
+            mole_dx, ncomp);
+
+    *x_list = malloc(sum * sizeof(**x_list));
+    x_list0 = *x_list;
+    for (i = 0; i < sum; i++) {
+        x_list0[i] = malloc(ncomp * sizeof(double));
+    }
+
+    sum2 = (mole_max - mole_min + 1) / dx;
+    if (sum2 >= mole - ncomp + 1) {
+        sum2 = mole - ncomp + 1;
+    }
+    count = 0;
+
+    for (i = 0; i < sum2; i++) {
+        int sum3;
+        double **x_list_b;
+
+        if (mole_range == NULL) {
+            sum3 = flash_calculation_generate_x_new(mole - i - mole_min, 
+                    NULL, NULL, ncomp - 1, &x_list_b);
+        }
+        else {
+            sum3 = flash_calculation_generate_x_new(mole - i - mole_min, 
+                    mole_range + 2, mole_dx + 1, ncomp - 1, &x_list_b);
+        }
+
+        for (j = 0; j < sum3; j++) {
+            x_list0[count][0] = (double)(i + mole_min) * dx / mole;
+
+            for (k = 0; k < ncomp - 1; k++) {
+                x_list0[count][k + 1] = x_list_b[j][k] 
+                    * (double)(mole - (i + mole_min) * dx) / mole;
+            }
+
+            count += 1;
+
+            free(x_list_b[j]);
+        }
+
+        free(x_list_b);
+    }
+
+    if (count != sum) {
+        printf("JAKDFJSLKDJFSLKDJFSDLKFJLSDKJFSDKJFSLDKJFSDLKFJD\n");
+        exit(2);
+    }
+
+    return sum;
+}
+
 void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T_min, double T_max, double P_min, 
         double P_max, double dT, double dP, FLASH_STAB_ANN *fsa, char *output)
@@ -141,8 +288,7 @@ void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list,
     printf("   -- Generating stability analysis data:\n");
 
     for (i = 0; i < nx; i++) {
-        for (j = 0; j < ncomp; j++) {
-            x[j] = x_list[i][j];
+        for (j = 0; j < ncomp; j++) { x[j] = x_list[i][j];
         }
 
         printf("      -- Data Set %d / %d\n", i, nx);

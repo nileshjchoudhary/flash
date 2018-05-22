@@ -1,6 +1,20 @@
 #include "fc.h"
 
-int main(int argc, char **argv) {
+static int verb = 0;
+static int split_failure = 0;
+static int split_itr = 0;
+static double split_solve_time = 0.;
+static double split_pred_time = 0.;
+
+static int stab_itr = 0;
+static double stab_solve_time = 0.;
+static double stab_pred_time = 0.;
+
+static double mem_peak = 0;
+static double mem_current = 0;
+
+int main(int argc, char **argv) 
+{
     char *model_file, *prop_file, *binary_file, *z_file;
     COMP_LIST *comp_list;
     double pres, temp, *x, *K;
@@ -71,8 +85,14 @@ int main(int argc, char **argv) {
         double **x_list;
         char output_rank[100];
 
+#if 0
         nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
                 0.005, &x_list);
+#endif
+
+        nx = flash_calculation_generate_x_new(fm->mole, fm->mole_range, fm->mole_dx,
+                comp_list->ncomp, &x_list);
+
 
         nx_rank = nx / nprocs;
         nx_begin = nx_rank * myrank;
@@ -251,16 +271,24 @@ int main(int argc, char **argv) {
 
     if (strcmp(fm->type, "envelope_data") == 0) {
         int nx, nx_rank, nx_begin;
-        double **x_list;
+        double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
+        nx = flash_calculation_generate_x_new(fm->mole, fm->mole_range, fm->mole_dx,
+                comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, nx, nx_rank, nx_begin);
@@ -273,7 +301,7 @@ int main(int argc, char **argv) {
         }
 
         flash_calculation_generate_phase_envelope_data(comp_list, 
-                nx_rank, x_list + nx_begin, fm->T_min, fm->T_max, fm->P_min, 
+                nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
                 fm->P_max, fm->dT, fm->dP, output_rank);
 
         for (i = 0; i < nx; i++) {
@@ -287,8 +315,15 @@ int main(int argc, char **argv) {
         double **x_list;
         char output_rank[100];
 
+#if 0
         nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
                 0.005, &x_list);
+#endif
+        if (fm->mole_range == NULL) {
+            printf("DDDDDDDDDDDDDD: NULLLLLLLLLLLLLL\n");
+        }
+        nx = flash_calculation_generate_x_new(fm->mole, fm->mole_range, fm->mole_dx,
+                comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
         nx_begin = nx_rank * myrank;

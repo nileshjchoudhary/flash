@@ -16,6 +16,8 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
     fm->output = malloc(100 * sizeof(*(fm->output)));
     fm->nF = 0;
     fm->F = NULL;
+    fm->mole_range = NULL;
+    fm->mole_dx = NULL;
     fm->split_ann = NULL;
     fm->split_ann_level = 0;
 
@@ -66,6 +68,9 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
         else if (strcmp(name, "dP") == 0) {
             fm->dP = atof(csv_value[i]->value[1]);
         }
+        else if (strcmp(name, "mole") == 0) {
+            fm->mole = atoi(csv_value[i]->value[1]);
+        }
         else if (strcmp(name, "dx") == 0) {
             fm->dx = atof(csv_value[i]->value[1]);
         }
@@ -75,6 +80,22 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
 
             for (j = 0; j < fm->nF; j++) {
                 fm->F[j] = atof(csv_value[i]->value[j + 1]);
+            }
+        }
+        else if (strcmp(name, "mole_range") == 0) {
+            fm->n_mole_range = csv_value[i]->n - 1;
+            fm->mole_range = malloc(fm->n_mole_range * sizeof(*(fm->mole_range)));
+
+            for (j = 0; j < fm->n_mole_range; j++) {
+                fm->mole_range[j] = atoi(csv_value[i]->value[j + 1]);
+            }
+        }
+        else if (strcmp(name, "mole_dx") == 0) {
+            fm->n_mole_dx = csv_value[i]->n - 1;
+            fm->mole_dx = malloc(fm->n_mole_dx * sizeof(*(fm->mole_dx)));
+
+            for (j = 0; j < fm->n_mole_dx; j++) {
+                fm->mole_dx[j] = atoi(csv_value[i]->value[j + 1]);
             }
         }
         else if (strcmp(name, "T") == 0) {

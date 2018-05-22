@@ -1,4 +1,11 @@
 #include "fc.h"
+
+static int verb = 0;
+static int split_failure = 0;
+static int split_itr = 0;
+static double split_solve_time = 0.;
+static double split_pred_time = 0.;
+
 /* ## 3. Two-phase Flash Calculation
 # The following code is designed for two-phase flash calculations.
 */
