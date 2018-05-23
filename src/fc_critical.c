@@ -77,7 +77,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
 
         K = malloc(ncomp * sizeof(*K));
 
-        flash_calculation_saturation_calculation_search_Pu_Ps(eos, z, T, 50.0, 0, 1.0, 1, 0, Pu_Ps);
+        flash_calculation_saturation_calculation_search_Pu_Ps(eos, z, T, 50.0, 0, 1.0, 1, 0, Pu_Ps, P_max);
         eos->pres = Pu_Ps[0];
         eos->temp = T;
         flash_calculation_estimate_K(eos, K);
