@@ -226,7 +226,7 @@ int flash_calculation_search_stable_temperature(COMP_LIST *comp_list,
     then the lower saturation pressure (dew point pressure).
 */
 PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *eos, 
-        double *z, double T_start, double T_end, double dT, double P_est, double dP)
+        double *z, double T_start, double T_end, double dT, double P_est, double dP, double P_max)
 {
 	double dT_min = 0.1, *T_list, P, last;
 	int count, n, i, begin_index;
@@ -305,7 +305,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                 break;
 			}
             else {
-                pe->Ps[count] = 1.0;
+                pe->Ps[count] = P_max;
                 pe->Ts[count] = T_list[i];
                 P = P_est;
                 count += 1;
@@ -326,7 +326,8 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
         insert_T = malloc(count0 * sizeof(*insert_T));
 
         for (i = 0; i < count0 - 1; i++) {
-            if (pe->Ps[i] > 1.0 && pe->Ps[i + 1] > 1.0) {
+            if (pe->Ps[i] > 1.0 && pe->Ps[i + 1] > 1.0
+                    && pe->Ps[i] < P_max) {
                 if (fabs(pe->Ps[i] - pe->Ps[i + 1]) > dP
                         && fabs(pe->Ts[i] - pe->Ts[i + 1]) > dT * 0.01) {
                     flag_dP = 0;

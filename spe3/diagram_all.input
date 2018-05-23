@@ -2,13 +2,13 @@ type        envelope_data
 prop_file   spe3-prop.csv
 bin_file    spe3-bin.csv
 z_file      spe3-z.csv
-T_min       200.0
+T_min       300.0
 T_max       900.0
 P_min       10.0
 P_max       200.0
-mole        1000
-mole_range  100 990  10 500  10 400  10 300  10 200  10 200  10 200  1 150  1 100  1 100
-mole_dx          90      60      60      80      90      50      50     50     30     30
+mole        100
+mole_range  10 91  1 51  1 41  1 31  1 21   1 21  1 21  1 16  1 10  1 10
+mole_dx        10    10    10    10    10     10    10     5     3     3
 dP          2
 dT          2
 output      spe3-diagram

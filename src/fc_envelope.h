@@ -26,7 +26,7 @@ int flash_calculation_search_unstable_temperature(COMP_LIST *comp_list,
 int flash_calculation_search_stable_temperature(COMP_LIST *comp_list, 
         double *comp_X, double P, double *T_list, int nT);
 PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *eos, 
-        double *z, double T_start, double T_end, double dT, double P_est, double dP);
+        double *z, double T_start, double T_end, double dT, double P_est, double dP, double P_max);
 void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
         int ncomp, int selected_component, char *output);
 PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list, 

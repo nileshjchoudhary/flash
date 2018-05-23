@@ -33,7 +33,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
     /* Construct phase envolope */
     if (pe == NULL) {
         pd->pe = flash_calculation_phase_saturation_envelope_construction(eos, 
-                z, T_start, T_end, dT, 250.0, dP);
+                z, T_start, T_end, dT, 250.0, dP, P_end);
     }
     else {
         pd->pe = pe;
