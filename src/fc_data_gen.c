@@ -155,7 +155,7 @@ static int flash_calculation_generate_x_number_new(int mole, int *mole_range,
 
     if (ncomp == 2) {
         //printf("ncomp: %d, max: %d, min: %d,\n", ncomp, mole_max, mole_min);
-        sum = (mole_max - mole_min + 1) / dx;
+        sum = (mole_max - mole_min) / dx + 1;
 
         return sum;
     }
@@ -168,21 +168,21 @@ static int flash_calculation_generate_x_number_new(int mole, int *mole_range,
     for (i = 0; i < sum2; i++) {
         if (mole_range == NULL) {
             if (mole_dx == NULL) {
-                sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                sum += flash_calculation_generate_x_number_new(mole - i * dx - mole_min, 
                         NULL, NULL, ncomp - 1);
             }
             else {
-                sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                sum += flash_calculation_generate_x_number_new(mole - i * dx - mole_min, 
                         NULL, mole_dx, ncomp - 1);
             }
         }
         else {
             if (mole_dx == NULL) {
-                sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                sum += flash_calculation_generate_x_number_new(mole - i * dx - mole_min, 
                         mole_range + 2, NULL, ncomp - 1);
             }
             else {
-                sum += flash_calculation_generate_x_number_new(mole - i - mole_min, 
+                sum += flash_calculation_generate_x_number_new(mole - i * dx - mole_min, 
                         mole_range + 2, mole_dx + 1, ncomp - 1);
             }
         }
@@ -218,7 +218,7 @@ int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
     mole_min = mole_min < 1 ? 1 : mole_min;
 
     if (ncomp == 2) {
-        sum = (mole_max - mole_min + 1) / dx;
+        sum = (mole_max - mole_min) / dx + 1;
 
         //printf("mole: %d\n", mole);
 
@@ -257,11 +257,11 @@ int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
         double **x_list_b;
 
         if (mole_range == NULL) {
-            sum3 = flash_calculation_generate_x_new(mole - i - mole_min, 
+            sum3 = flash_calculation_generate_x_new(mole - i * dx - mole_min, 
                     NULL, NULL, ncomp - 1, &x_list_b);
         }
         else {
-            sum3 = flash_calculation_generate_x_new(mole - i - mole_min, 
+            sum3 = flash_calculation_generate_x_new(mole - i * dx - mole_min, 
                     mole_range + 2, mole_dx + 1, ncomp - 1, &x_list_b);
         }
 
