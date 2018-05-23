@@ -9,7 +9,7 @@
 a pressure $P_u$ at which two phases co-exist. The stability test is used in this function.
 */
 void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, double T, double P_est, 
-	int search, double search_step, int Ps_found, int Pu_found, double *Pu_Ps)
+	int search, double search_step, int Ps_found, int Pu_found, double *Pu_Ps, double P_max)
 {
 	/* search: 0 upper
 			   1 down */
@@ -55,11 +55,16 @@ void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, 
         else if (search == 1)
             eos->pres += search_step;
         
-        if (eos->pres < 1.0 || eos->pres > 1000.0) {
+        if (eos->pres < 1.0) {
             Pu = 1.0;
             Ps = 1.0;
             break;
 		}
+        else if (eos->pres > P_max) {
+            Pu = P_max;
+            Ps = P_max;
+            break;
+        }
 	}
 
     Pu_Ps[0] = Pu;
@@ -72,8 +77,9 @@ void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, 
 /* ### Search temperature at a given pressure
 # At a given pressure, search a temperature $T_s$ at which a single phase exists and a temperature $T_u$ at which two phases co-exist. The stability test is used in this function.
 */
-void flash_calculation_saturation_calculation_search_Tu_Ts(EOS *eos, double *z, double P, double T_est, int search, 
-	double search_step, int Ts_found, int Tu_found, double *Tu_Ts)
+void flash_calculation_saturation_calculation_search_Tu_Ts(EOS *eos, double *z, double P, 
+        double T_est, int search, double search_step, int Ts_found, int Tu_found, 
+        double *Tu_Ts)
 {
 	/* default values:  T_est: 100.0, search: 0 upper, 1 down, search_step: 1.0, Ts_found: 0, Tu_found: 0. */
     int ncomp = eos->ncomp;
@@ -361,7 +367,7 @@ double flash_calculation_saturation_calculation_calculate_Q_derivative(PHASE *ph
 			dew point with $K_i = z_i / y_i$, or by comparing the density of the incipient phase with that of the feed.
 */
 double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, double P_est, 
-        int search, double search_step)
+        int search, double search_step, double P_max)
 {
 	/* search: 0 upper, 1 down */
 	int i, itr, ncomp = eos->ncomp;
@@ -370,7 +376,7 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
     PHASE *phase_x, *phase_z;
 
     flash_calculation_saturation_calculation_search_Pu_Ps(eos, z, T, P_est, 
-            search, search_step, 0, 0, Pu_Ps);
+            search, search_step, 0, 0, Pu_Ps, P_max);
     Pu = Pu_Ps[0];
 	Ps = Pu_Ps[1];
 

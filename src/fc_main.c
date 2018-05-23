@@ -264,7 +264,7 @@ int main(int argc, char **argv)
         PHASE_ENVELOPE_PM *pe_pm;
 
         pe_pm = flash_calculation_phase_saturation_envelope_construction_PM(comp_list, 
-                x, fm->T, 100.0, fm->dP, fm->selected_component, fm->dxx, fm->output);
+                x, fm->T, 100.0, fm->dP, fm->selected_component, fm->dxx, fm->P_max, fm->output);
 
         flash_calculation_phase_envelope_pm_free(&pe_pm);
     }
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
 
         flash_calculation_generate_phase_envelope_PM_data(comp_list, 
                 nx_rank, x_list_rank, fm->T, fm->dP, 
-                fm->dxx, output_rank);
+                fm->dxx, fm->P_max, output_rank);
 
         for (i = 0; i < nx; i++) {
             free(x_list[i]);

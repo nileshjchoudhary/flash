@@ -29,8 +29,8 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
         double *z, double T_start, double T_end, double dT, double P_est, double dP, double P_max);
 void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
         int ncomp, int selected_component, char *output);
-PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list, 
-        double *z, double T, double P_est, double dP, int selected_component, double dx, 
+PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list,
+        double *z, double T, double P_est, double dP, int selected_component, double dx, double P_max,
         char *output);
 
 void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,

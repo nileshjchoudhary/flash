@@ -226,7 +226,8 @@ int flash_calculation_search_stable_temperature(COMP_LIST *comp_list,
     then the lower saturation pressure (dew point pressure).
 */
 PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *eos, 
-        double *z, double T_start, double T_end, double dT, double P_est, double dP, double P_max)
+        double *z, double T_start, double T_end, double dT, double P_est, double dP, 
+        double P_max)
 {
 	double dT_min = 0.1, *T_list, P, last;
 	int count, n, i, begin_index;
@@ -261,7 +262,8 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
 
     for (i = begin_index; i < n; i++) {
         //printf("----- Upper: temperature %lf\n", T_list[i]);
-        P = flash_calculation_saturation_calculation(eos, z, T_list[i], P, 0, dP);
+        P = flash_calculation_saturation_calculation(eos, z, T_list[i], 
+                P, 0, dP, P_max);
         //printf("             pressure    %lf\n", P); 
         
         if (P > 1.0) {
@@ -281,7 +283,8 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                 T_c = (T_l + T_r) * 0.5;
 
                 while(1) {
-                    P = flash_calculation_saturation_calculation(eos, z, T_c, P, 0, dP * 0.1);
+                    P = flash_calculation_saturation_calculation(eos, z, T_c, P, 0, dP * 0.1,
+                            P_max);
                     
                     if (P > 1.0) {
                         pe->Ps[count] = P;
@@ -337,7 +340,8 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                     insert_T[insert_count] = (pe->Ts[i] + pe->Ts[i + 1]) * 0.5;
                     insert_P[insert_count] 
                         = flash_calculation_saturation_calculation(eos, z, 
-                                insert_T[insert_count], pe->Ps[i], 0, dP * 0.1);
+                                insert_T[insert_count], pe->Ps[i], 0, dP * 0.1, 
+                                P_max);
 
                     printf("insert: Ps: %e %e, Ts: %e %e, insert_P: %e\n", pe->Ps[i], pe->Ps[i + 1],
                             pe->Ts[i], pe->Ts[i + 1], insert_P[insert_count]);
@@ -410,7 +414,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
             continue;
 		}
             
-        P = flash_calculation_saturation_calculation(eos, z, pe->Ts[i], P, 1, dP * 0.1);
+        P = flash_calculation_saturation_calculation(eos, z, pe->Ts[i], P, 1, dP * 0.1, P_max);
         //printf("             pressure    %lf\n", P);
         
         if (P > 1.0) {
@@ -506,7 +510,7 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
 }
 
 PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list, 
-        double *z, double T, double P_est, double dP, int selected_component, double dx, 
+        double *z, double T, double P_est, double dP, int selected_component, double dx, double P_max,
         char *output)
 {
     int ncomp = comp_list->ncomp, i, k, n_x_list, count, last;
@@ -561,7 +565,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
         printf("Pest: %lf\n", P);
 #endif
 
-        P = flash_calculation_saturation_calculation(eos, X, T, P, 0, dP);
+        P = flash_calculation_saturation_calculation(eos, X, T, P, 0, dP, P_max);
         //printf("Result: %lf\n", P);
 
         if (P > 1.0) {
@@ -593,7 +597,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
                 }
 
                 while(1) {
-                    P = flash_calculation_saturation_calculation(eos, X, T, P, 0, dP * 0.1);
+                    P = flash_calculation_saturation_calculation(eos, X, T, P, 0, dP * 0.1, P_max);
 
                     if (P > 1.0) {
                         pe_pm->Ps[count] = P;
@@ -668,7 +672,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
             continue;
         }
 
-        P = flash_calculation_saturation_calculation(eos, X, T, P, 1, dP * 0.1);
+        P = flash_calculation_saturation_calculation(eos, X, T, P, 1, dP * 0.1, P_max);
         //printf("             pressure    %lf\n", P);
 
         if (P > 1.0) {

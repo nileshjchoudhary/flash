@@ -20,6 +20,6 @@ void flash_calculation_generate_phase_envelope_data(COMP_LIST *comp_list,
         double P_max, double dT, double dP, char *output);
 void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T, double dP, double dxx, 
-        char *output);
+        double P_max, char *output);
 #define FC_DATA_GEN
 #endif
