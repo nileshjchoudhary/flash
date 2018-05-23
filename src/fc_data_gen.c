@@ -194,7 +194,7 @@ static int flash_calculation_generate_x_number_new(int mole, int *mole_range,
 int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
         int ncomp, double ***x_list)
 {
-    int i, sum, count;
+    int i, j, k, sum, sum2, count;
     double **x_list0;
     int mole_max, mole_min, dx;
 
@@ -228,8 +228,8 @@ int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
         for (i = 0; i < sum; i++) {
             x_list0[i] = malloc(2 * sizeof(double));
 
-            x_list0[i][0] = (double)(i + mole_min) * dx / mole;
-            x_list0[i][1] = (double)(mole - (i + mole_min) * dx) / mole;
+            x_list0[i][0] = (double)(i * dx + mole_min) / mole;
+            x_list0[i][1] = (double)(mole - (i * dx + mole_min)) / mole;
         }
 
         return sum;
@@ -238,7 +238,7 @@ int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
     sum = flash_calculation_generate_x_number_new(mole, mole_range, 
             mole_dx, ncomp);
 
-    printf("ncomp: %d, sum: %d\n", ncomp, sum);
+    //printf("ncomp: %d, sum: %d\n", ncomp, sum);
 
     *x_list = malloc(sum * sizeof(**x_list));
     x_list0 = *x_list;
@@ -266,11 +266,11 @@ int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
         }
 
         for (j = 0; j < sum3; j++) {
-            x_list0[count][0] = (double)(i + mole_min) * dx / mole;
+            x_list0[count][0] = (double)(i * dx + mole_min) / mole;
 
             for (k = 0; k < ncomp - 1; k++) {
                 x_list0[count][k + 1] = x_list_b[j][k] 
-                    * (double)(mole - (i + mole_min) * dx) / mole;
+                    * (double)(mole - (i * dx + mole_min)) / mole;
             }
 
             count += 1;

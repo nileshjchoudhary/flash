@@ -308,27 +308,30 @@ int main(int argc, char **argv)
             free(x_list[i]);
         }
         free(x_list);
+        free(x_list_rank);
     }
 
     if (strcmp(fm->type, "envelope_PM_data") == 0) {
         int nx, nx_rank, nx_begin;
-        double **x_list;
+        double **x_list, **x_list_rank;
         char output_rank[100];
 
-#if 0
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
-#endif
-        if (fm->mole_range == NULL) {
-            printf("DDDDDDDDDDDDDD: NULLLLLLLLLLLLLL\n");
-        }
-        nx = flash_calculation_generate_x_new(fm->mole, fm->mole_range, fm->mole_dx,
+        nx = flash_calculation_generate_x_new(fm->mole, 
+                fm->mole_range, fm->mole_dx,
                 comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, nx, nx_rank, nx_begin);
@@ -341,13 +344,14 @@ int main(int argc, char **argv)
         }
 
         flash_calculation_generate_phase_envelope_PM_data(comp_list, 
-                nx_rank, x_list + nx_begin, fm->T, fm->dP, 
+                nx_rank, x_list_rank, fm->T, fm->dP, 
                 fm->dxx, output_rank);
 
         for (i = 0; i < nx; i++) {
             free(x_list[i]);
         }
         free(x_list);
+        free(x_list_rank);
     }
 
     printf("Stability calculation iteration: %d\n", stab_itr);
