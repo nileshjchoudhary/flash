@@ -264,7 +264,8 @@ int main(int argc, char **argv)
         PHASE_ENVELOPE_PM *pe_pm;
 
         pe_pm = flash_calculation_phase_saturation_envelope_construction_PM(comp_list, 
-                x, fm->T, 100.0, fm->dP, fm->selected_component, fm->dxx, fm->P_max, fm->output);
+                x, fm->T, 100.0, fm->dP, fm->selected_component, fm->dxx, fm->P_max, 
+                fm->output);
 
         flash_calculation_phase_envelope_pm_free(&pe_pm);
     }
@@ -334,7 +335,8 @@ int main(int argc, char **argv)
             }
         }
 
-        printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, nx, nx_rank, nx_begin);
+        printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, 
+                nx, nx_rank, nx_begin);
 
         if (nprocs == 1) {
             sprintf(output_rank, "%s", fm->output);

@@ -5,7 +5,8 @@ z_file      C1C6C10-z.csv
 T           500.0
 P_min       10.0
 P_max       200.0
-dP          1.0
-dx          0.1
-dxx         0.03
+dP          2.0
+mole_range  1 98    1 98   1 98
+mole_dx        3       3      3
+dxx         0.1
 output      C1C6C10-diagram-PM

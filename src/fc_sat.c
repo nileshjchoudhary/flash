@@ -61,8 +61,14 @@ void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, 
             break;
 		}
         else if (eos->pres > P_max) {
-            Pu = P_max;
-            Ps = P_max;
+            if (!status) {
+                Pu = P_max;
+                Ps = P_max;
+            }
+            else {
+                Pu = 1.0;
+                Ps = 1.0;
+            }
             break;
         }
 	}
@@ -383,6 +389,10 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
     if (Pu <= 1.0 && Ps <= 1.0) {
         return 1.0;
 	}
+
+    if (Pu >= P_max && Ps >= P_max) {
+        return P_max;
+    }
     
 	/* Search unstable pressure */
     K = malloc(ncomp * sizeof(*K));
@@ -390,11 +400,6 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
             Pu, Ps, search, 0.05, 0, K);
     
     if (P0 <= 1.0 && search == 1) {
-        return P0;
-	}
-    
-    if (P0 <= 1.0) {
-        printf("Cannot find a saturation pressure at a given temperature!");
         return P0;
 	}
     

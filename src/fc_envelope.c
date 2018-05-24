@@ -308,7 +308,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                 break;
 			}
             else {
-                pe->Ps[count] = P_max;
+                pe->Ps[count] = P;
                 pe->Ts[count] = T_list[i];
                 P = P_est;
                 count += 1;
@@ -343,8 +343,10 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                                 insert_T[insert_count], pe->Ps[i], 0, dP * 0.1, 
                                 P_max);
 
+#if 0
                     printf("insert: Ps: %e %e, Ts: %e %e, insert_P: %e\n", pe->Ps[i], pe->Ps[i + 1],
                             pe->Ts[i], pe->Ts[i + 1], insert_P[insert_count]);
+#endif
 
                     insert_count++;
                 }
