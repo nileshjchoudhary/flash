@@ -7,8 +7,8 @@ T_max       900.0
 P_min       1.0
 P_max       550.0
 mole        100
-mole_range  1 98    1 98   1 98
-mole_dx        2       6      3
+mole_range  20 98    1 90   1 98
+mole_d         25      15     10
 dP          2.0
 dT          2.0
 output      C1C6C10-diagram

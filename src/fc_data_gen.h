@@ -3,6 +3,8 @@ int flash_calculation_generate_x(double start, double end, double dx,
         int ncomp, double min_x, double ***x_list);
 int flash_calculation_generate_x_new(int mole, int *mole_range, int *mole_dx,
         int ncomp, double ***x_list);
+int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
+        int ncomp, double ***x_list);
 void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T_min, double T_max, double P_min, 
         double P_max, double dT, double dP, FLASH_STAB_ANN *fsa, char *output);

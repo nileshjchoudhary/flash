@@ -746,6 +746,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
     flag = 0; 
     flag1 = 0;
     for (i = 0; i < pe->n; i++) {
+#if 0
         if (pe->Ps[i] > 1.0) {
             flag = 1;
         }
@@ -756,6 +757,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
             continue;
         }
         flag1 = flag;
+#endif
 
         if (comp_X != NULL) {
             for (j = 0; j < ncomp; j++) {
@@ -785,6 +787,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
         T = pe->Ts[i];
         P = pe->Ps[i];
 
+#if 0
         if (pe->Ps[i] > 1.0) {
             flag = 1;
         }
@@ -823,6 +826,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
                 }
             }
         }
+#endif
 
         if (i == 0 || (i > 0 && T > pe->Ts[i - 1])) {
             if (comp_X != NULL) {

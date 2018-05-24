@@ -18,6 +18,7 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
     fm->F = NULL;
     fm->mole_range = NULL;
     fm->mole_dx = NULL;
+    fm->mole_d = NULL;
     fm->split_ann = NULL;
     fm->split_ann_level = 0;
 
@@ -96,6 +97,14 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
 
             for (j = 0; j < fm->n_mole_dx; j++) {
                 fm->mole_dx[j] = atoi(csv_value[i]->value[j + 1]);
+            }
+        }
+        else if (strcmp(name, "mole_d") == 0) {
+            fm->n_mole_d = csv_value[i]->n - 1;
+            fm->mole_d = malloc(fm->n_mole_d * sizeof(*(fm->mole_d)));
+
+            for (j = 0; j < fm->n_mole_d; j++) {
+                fm->mole_d[j] = atoi(csv_value[i]->value[j + 1]);
             }
         }
         else if (strcmp(name, "T") == 0) {
