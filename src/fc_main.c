@@ -275,7 +275,8 @@ int main(int argc, char **argv)
         double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_x_new_2(fm->mole, fm->mole_range, fm->mole_d,
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
                 comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
@@ -317,8 +318,8 @@ int main(int argc, char **argv)
         double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_x_new(fm->mole, 
-                fm->mole_range, fm->mole_dx,
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
                 comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
