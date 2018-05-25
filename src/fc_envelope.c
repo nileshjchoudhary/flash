@@ -512,8 +512,8 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
 }
 
 PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list, 
-        double *z, double T, double P_est, double dP, int selected_component, double dx, double P_max,
-        char *output)
+        double *z, double T, double P_est, double dP, int selected_component, double *comp_range, 
+        double dx, double P_max, char *output)
 {
     int ncomp = comp_list->ncomp, i, k, n_x_list, count, last;
     double *x_list, *X, sum_no_selected, P;
@@ -521,14 +521,25 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
     int flag, flag2, flag3 = 0;
     EOS *eos;
     FILE *fp;
+    double comp_min, comp_max;
 
     eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
 
-    n_x_list = (int)((1.0 - 0.001) / dx);
+    if (comp_range == NULL) {
+        comp_min = 0.001;
+        comp_max = 1.0;
+    }
+    else {
+        comp_min = comp_range[0];
+        comp_max = comp_range[1];
+    }
+
+    n_x_list = (int)((comp_max - comp_min) / dx) + 1;
+    dx = (comp_max - comp_min) / n_x_list;
 
     x_list = malloc(n_x_list * sizeof(*x_list));
     for (i = 0; i < n_x_list; i++) {
-        x_list[i] = 0.001 + i * dx;
+        x_list[i] = comp_min + i * dx;
     }
 
     pe_pm = malloc(sizeof(*pe_pm));

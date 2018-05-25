@@ -323,7 +323,12 @@ static int flash_calculation_generate_x_number_new_2(int mole, int *mole_range,
 
     mole_max = mole_max > mole ? mole : mole_max;
     mole_min = mole_min < 1 ? 1 : mole_min;
-    dx = (double)(mole_max - mole_min) / (d - 1);
+    if (d > 1) {
+        dx = (double)(mole_max - mole_min) / (d - 1);
+    }
+    else {
+        dx = (double)(mole_max - mole_min) / (d);
+    }
 
     if (ncomp == 2) {
         int mole_min0, mole_max0, mole0;
@@ -411,7 +416,12 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
 
     mole_max = mole_max > mole ? mole : mole_max;
     mole_min = mole_min < 1 ? 1 : mole_min;
-    dx = (double)(mole_max - mole_min) / (d - 1);
+    if (d > 1) {
+        dx = (double)(mole_max - mole_min) / (d - 1);
+    }
+    else {
+        dx = (double)(mole_max - mole_min) / (d);
+    }
 
     if (ncomp == 2) {
         int mole_min0, mole_max0, mole0, d0;
@@ -1088,7 +1098,7 @@ void flash_calculation_generate_phase_envelope_data(COMP_LIST *comp_list,
 }
 
 void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list, 
-        int nx, double **x_list, double T, double dP, double dxx, double P_max, 
+        int nx, double **x_list, double T, double dP, double *comp_range, double dxx, double P_max, 
         char *output)
 {
     int i, j, k, ncomp = comp_list->ncomp;
@@ -1121,7 +1131,7 @@ void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list,
 
         //for (j = 0; j < ncomp; j++) {
         pe_pm0 = flash_calculation_phase_saturation_envelope_construction_PM(comp_list, 
-                x, T, 100.0, dP, 0, dxx, P_max, output);
+                x, T, 100.0, dP, 0, comp_range, dxx, P_max, output);
 
         pe_pm->Ps = realloc(pe_pm->Ps, 
                 (pe_pm->n + pe_pm0->n) * sizeof(*(pe_pm->Ps)));
