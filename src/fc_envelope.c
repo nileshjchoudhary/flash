@@ -716,6 +716,20 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
 		}
     }
 
+    if (!flag && !flag2) {
+        for (i = last - 1; i >= 0; i--) {
+            X = pe_pm->xs[i];
+
+            //printf("----- Down : %d\n", i);
+            pe_pm->Ps[count] = 1.0;
+            pe_pm->xs[count] = malloc(ncomp * sizeof(double));
+            for (k = 0; k < ncomp; k++) {
+                pe_pm->xs[count][k] = X[k];
+            }
+            count += 1;
+        }
+    }
+
     pe_pm->n = count;
 
     if (flag3) {
