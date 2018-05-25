@@ -828,7 +828,9 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
         }
 #endif
 
-        if (i == 0 || (i > 0 && T > pe->Ts[i - 1])) {
+        if (i == 0 || (i > 0 && T > pe->Ts[i - 1])
+                || (comp_X == NULL 
+                    && fabs(pe->xs[i][ncomp - 1] - pe->xs[i - 1][ncomp - 1]) > 1e-5)) {
             if (comp_X != NULL) {
                 for (j = 0; j < ncomp; j++) {
                     fprintf(fp_upper, "%lf,", comp_X[j]);

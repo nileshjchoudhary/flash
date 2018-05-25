@@ -6,9 +6,9 @@ T_min       300.0
 T_max       900.0
 P_min       10.0
 P_max       500.0
-mole        100
-mole_range  10 91  1 51  1 41  1 31  1 21   1 21  1 21  1 16  1 10  1 10
-mole_dx        10    10    10    10    10     10    10     5     3     3
+mole        1000
+mole_range  300 950  1 100 10 310  10 110  10 310  10 110   10 210  10 110  10 210  10 110 
+mole_d           10      2      3       2      3        2       3       2       3       2
 dP          2
 dT          2
 output      spe3-diagram

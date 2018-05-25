@@ -323,10 +323,31 @@ static int flash_calculation_generate_x_number_new_2(int mole, int *mole_range,
 
     mole_max = mole_max > mole ? mole : mole_max;
     mole_min = mole_min < 1 ? 1 : mole_min;
-    dx = (double)(mole_max - mole_min) / (d);
+    dx = (double)(mole_max - mole_min) / (d - 1);
 
     if (ncomp == 2) {
-        //printf("ncomp: %d, max: %d, min: %d,\n", ncomp, mole_max, mole_min);
+        int mole_min0, mole_max0, mole0;
+
+        sum = d;
+
+        if (mole_range == NULL) {
+            mole_min0 = 1;
+            mole_max0 = mole;
+        }
+        else {
+            mole_min0 = mole_range[2];
+            mole_max0 = mole_range[3];
+        }
+
+        for (i = 0; i < sum; i++) {
+            mole0 = mole - i * dx - mole_min;
+            
+            if (mole0 < mole_min0 
+                    || mole0 > mole_max0) {
+                d--;
+            }
+        }
+
         sum = d;
 
         return sum;
@@ -390,20 +411,39 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
 
     mole_max = mole_max > mole ? mole : mole_max;
     mole_min = mole_min < 1 ? 1 : mole_min;
-    dx = (double)(mole_max - mole_min) / (d);
+    dx = (double)(mole_max - mole_min) / (d - 1);
 
     if (ncomp == 2) {
+        int mole_min0, mole_max0, mole0, d0;
+
         sum = d;
 
         //printf("mole: %d\n", mole);
-
-        *x_list = malloc(sum * sizeof(**x_list));
-        x_list0 = *x_list;
+        //
+        if (mole_range == NULL) {
+            mole_min0 = 1;
+            mole_max0 = mole;
+        }
+        else {
+            mole_min0 = mole_range[2];
+            mole_max0 = mole_range[3];
+        }
 
         for (i = 0; i < sum; i++) {
-            double eps;
+            mole0 = mole - i * dx - mole_min;
+            
+            if (mole0 < mole_min0 
+                    || mole0 > mole_max0) {
+                d--;
+            }
+        }
 
-            x_list0[i] = malloc(2 * sizeof(double));
+        *x_list = malloc(d * sizeof(**x_list));
+        x_list0 = *x_list;
+
+        d0 = 0;
+        for (i = 0; i < sum; i++) {
+            double eps;
 
             if (mole - (i * dx + mole_min) <= 0) {
                 eps = 5e-4;
@@ -412,9 +452,23 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
                 eps = 0.0;
             }
 
-            x_list0[i][0] = (double)(i * dx + mole_min) / mole - eps;
-            x_list0[i][1] = (double)(mole - (i * dx + mole_min)) / mole + eps;
+            mole0 = mole - i * dx - mole_min;
+
+            if (mole0 < mole_min0 
+                    || mole0 > mole_max0) {
+                continue;
+            }
+
+            x_list0[d0] = malloc(2 * sizeof(double));
+
+
+            x_list0[d0][0] = (double)(i * dx + mole_min) / mole - eps;
+            x_list0[d0][1] = (double)(mole - (i * dx + mole_min)) / mole + eps;
+
+            d0++;
         }
+
+        sum = d;
 
         return sum;
     }
