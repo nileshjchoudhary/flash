@@ -400,7 +400,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
         P = 1.0;
     last = count;
 
-    for (i = last - 1; i > 0; i--) {
+    for (i = last - 1; i >= 0; i--) {
         //printf("----- Down : temperature %lf\n", pe->Ts[i]);
         if (flag2) {
             pe->Ps[count] = 1.0;
