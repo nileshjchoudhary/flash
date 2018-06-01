@@ -648,6 +648,24 @@ void flash_calculation_calculate_fugacity(PHASE *phase)
 
 void flash_calculation_calculate_phase_density(PHASE *phase)
 {
-    phase->density = phase->eos->pres / (phase->Z * phase->R * phase->eos->temp);
+    int i, ncomp;
+    COMP *comp;
+    double mole_den, mole_weight;
+    
+    mole_den = phase->eos->pres 
+        / (phase->Z * phase->R * phase->eos->temp);
+
+    ncomp = phase->ncomp;
+    comp = phase->eos->comp_list->comp;
+    mole_weight = 0.0;
+    for (i = 0; i < ncomp; i++) {
+        mole_weight += phase->mf[i] * comp[i].MW;
+    }
+
+    phase->density = mole_den * mole_weight;
 }
+
+
+
+
 

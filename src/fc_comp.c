@@ -8,7 +8,6 @@ COMP_LIST * flash_calculation_component_new(char *prop_file, char *bin_file)
     int nline, i, j, ncomp;
     COMP_LIST *comp_list;
     COMP *comp;
-    double *z;
 
     csv_value = malloc(20 * sizeof(*csv_value));
 
@@ -121,7 +120,7 @@ double * flash_calculation_composition_new(char *z_file)
     FILE *fn;
     char line[10240];
     CSV_LINE **csv_value, *csv_line0; 
-    int nline, i, j;
+    int nline, i;
     double *z;
 
     csv_value = malloc(20 * sizeof(*csv_value));

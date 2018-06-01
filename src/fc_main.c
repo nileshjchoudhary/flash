@@ -1,30 +1,15 @@
 #include "fc.h"
 
-static int verb = 0;
-static int split_failure = 0;
-static int split_itr = 0;
-static double split_solve_time = 0.;
-static double split_pred_time = 0.;
-
-static int stab_itr = 0;
-static double stab_solve_time = 0.;
-static double stab_pred_time = 0.;
-
-static double mem_peak = 0;
-static double mem_current = 0;
-
 int main(int argc, char **argv) 
 {
     char *model_file, *prop_file, *binary_file, *z_file;
     COMP_LIST *comp_list;
-    double pres, temp, *x, *K;
+    double *x;
     int i, j;
     int nprocs, myrank;
-    double Fv_list[3] = {0.2, 0.5, 0.8};
     FLASH_MODEL *fm;
     FLASH_SPLIT_ANN *fsa = NULL;
     FLASH_STAB_ANN *fsta = NULL;
-    double mem_peak;
 
     MPI_Init(&argc, &argv);
 
@@ -35,8 +20,6 @@ int main(int argc, char **argv)
 
     model_file = argv[1];
     fm = flash_calculation_model_new(model_file);
-
-    verb = fm->verb;
 
     prop_file = fm->prop_file;
     binary_file = fm->bin_file;
@@ -188,28 +171,37 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(fm->type, "split_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list;
+        int nx, nx_rank;
+        double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
+                comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         if (nprocs == 1) {
             sprintf(output_rank, "%s", fm->output);
         }
         else {
-            sprintf(output_rank, "%s-rank-%04d", fm->output, myrank);
+            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
         }
 
         flash_calculation_generate_split_calculation_data(comp_list, 
-                nx_rank, x_list + nx_begin, fm->T_min, fm->T_max, fm->P_min, 
+                nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
                 fm->P_max, fm->dT, fm->dP, fsa, output_rank);
 
         for (i = 0; i < nx; i++) {
@@ -250,6 +242,7 @@ int main(int argc, char **argv)
     }
 
 
+
     if (strcmp(fm->type, "diagram") == 0) {
         PHASE_DIAGRAM *pd;
 
@@ -271,6 +264,104 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(fm->type, "envelope_data") == 0) {
+        int nx, nx_rank;
+        double **x_list, **x_list_rank;
+        char output_rank[100];
+
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
+                comp_list->ncomp, &x_list);
+
+        nx_rank = nx / nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
+        }
+
+        if (nprocs == 1) {
+            sprintf(output_rank, "%s", fm->output);
+        }
+        else {
+            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
+        }
+
+        flash_calculation_generate_phase_envelope_data(comp_list, 
+                nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
+                fm->P_max, fm->dT, fm->dP, output_rank);
+
+        for (i = 0; i < nx; i++) {
+            free(x_list[i]);
+        }
+        free(x_list);
+        free(x_list_rank);
+    }
+
+    if (strcmp(fm->type, "envelope_PM_data") == 0) {
+        int nx, nx_rank;
+        double **x_list, **x_list_rank, comp_range[2];
+        char output_rank[100];
+
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
+                comp_list->ncomp, &x_list);
+
+        if (fm->mole_range == NULL) {
+            comp_range[0] = 1.0 / fm->mole;
+            comp_range[1] = 1.0;
+        }
+        else {
+            comp_range[0] = (double)fm->mole_range[0] / fm->mole;
+            comp_range[1] = (double)fm->mole_range[1] / fm->mole;
+        }
+
+        nx_rank = nx / nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
+        }
+
+        if (nprocs == 1) {
+            sprintf(output_rank, "%s", fm->output);
+        }
+        else {
+            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
+        }
+
+        flash_calculation_generate_phase_envelope_PM_data(comp_list, 
+                nx_rank, x_list_rank, fm->T, fm->dP, 
+                comp_range, fm->dxx, fm->P_max, output_rank);
+
+        for (i = 0; i < nx; i++) {
+            free(x_list[i]);
+        }
+        free(x_list);
+        free(x_list_rank);
+    }
+
+
+
+
+
+
+
+#if 0
+    if (strcmp(fm->type, "thermal_data") == 0) {
         int nx, nx_rank, nx_begin;
         double **x_list, **x_list_rank;
         char output_rank[100];
@@ -302,7 +393,7 @@ int main(int argc, char **argv)
             sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
         }
 
-        flash_calculation_generate_phase_envelope_data(comp_list, 
+        flash_calculation_generate_thermal_data(comp_list, 
                 nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
                 fm->P_max, fm->dT, fm->dP, output_rank);
 
@@ -312,76 +403,34 @@ int main(int argc, char **argv)
         free(x_list);
         free(x_list_rank);
     }
-
-    if (strcmp(fm->type, "envelope_PM_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list, **x_list_rank, comp_range[2];
-        char output_rank[100];
-
-        nx = flash_calculation_generate_x_new_2(fm->mole, 
-                fm->mole_range, fm->mole_d,
-                comp_list->ncomp, &x_list);
-
-        if (fm->mole_range == NULL) {
-            comp_range[0] = 1.0 / fm->mole;
-            comp_range[1] = 1.0;
-        }
-        else {
-            comp_range[0] = (double)fm->mole_range[0] / fm->mole;
-            comp_range[1] = (double)fm->mole_range[1] / fm->mole;
-        }
-
-        nx_rank = nx / nprocs;
-        if (myrank < nx - nx_rank * nprocs) {
-            nx_rank++;
-        }
-
-        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
-        j = 0;
-        for (i = 0; i < nx; i++) {
-            if (i % nprocs == myrank) {
-                x_list_rank[j] = x_list[i];
-                j++;
-            }
-        }
-
-        printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, 
-                nx, nx_rank, nx_begin);
-
-        if (nprocs == 1) {
-            sprintf(output_rank, "%s", fm->output);
-        }
-        else {
-            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
-        }
-
-        flash_calculation_generate_phase_envelope_PM_data(comp_list, 
-                nx_rank, x_list_rank, fm->T, fm->dP, 
-                comp_range, fm->dxx, fm->P_max, output_rank);
-
-        for (i = 0; i < nx; i++) {
-            free(x_list[i]);
-        }
-        free(x_list);
-        free(x_list_rank);
-    }
-
-    printf("Stability calculation iteration: %d\n", stab_itr);
-    printf("Stability calculation ANN prediction time: %lf\n", stab_pred_time);
-    printf("Stability calculation solve time: %lf\n", stab_solve_time);
-
-    printf("Split calculation failure: %d\n", split_failure);
-    printf("Split calculation iteration: %d\n", split_itr);
-    printf("Split calculation ANN prediction time: %lf\n", split_pred_time);
-    printf("Split calculation solve time: %lf\n", split_solve_time);
-
-
-#if 0
-    flash_calculation_memory_usage(MPI_COMM_WORLD, &mem_peak);
-    if (myrank == 0) {
-        printf("mem_peak: %lf\n", mem_peak);
-    }
 #endif
+
+
+
+
+
+
+
+
+
+
+
+    printf("Stability calculation iteration: %d\n", 
+            flash_calculation_stability_iteration_number());
+    printf("Stability calculation ANN prediction time: %lf\n", 
+            flash_calculation_stability_pre_time_cost());
+    printf("Stability calculation solve time: %lf\n", 
+            flash_calculation_stability_time_cost());
+
+    printf("Split calculation failure: %d\n",
+            flash_calculation_split_failure_number());
+    printf("Split calculation iteration: %d\n", 
+            flash_calculation_split_iteration_number());
+    printf("Split calculation ANN prediction time: %lf\n", 
+            flash_calculation_split_pred_time_cost());
+    printf("Split calculation solve time: %lf\n", 
+            flash_calculation_split_time_cost());
+
 
     if (fsa != NULL) {
         flash_calculation_split_ann_model_free(&fsa);

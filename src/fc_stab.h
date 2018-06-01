@@ -56,5 +56,9 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
         double dxx, FLASH_STAB_ANN *fsa, char *output_name);
 void flash_calculation_stability_map_free(STABILITY_MAP **sm);
 void flash_calculation_stability_PM_map_free(STABILITY_PM_MAP **sm);
+
+double flash_calculation_stability_time_cost(void);
+int flash_calculation_stability_iteration_number(void);
+double flash_calculation_stability_pre_time_cost(void);
 #define FC_STAB
 #endif

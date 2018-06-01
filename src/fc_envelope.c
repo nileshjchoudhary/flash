@@ -452,7 +452,7 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
     char file_name[100], file_name_upper[100], file_name_down[100];
     int i, j, k;
     FILE *fp, *fp_upper, *fp_down;
-    double xv, P;
+    double xv;
     int flag;
 
     if (output == NULL)
@@ -484,7 +484,6 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
     flag = 0;
     for (i = 0; i < pe_pm->n; i++) {
         xv = pe_pm->xs[i][selected_component];
-        P = pe_pm->Ps[i];
 
         if (i == 0 || (i > 0 && xv > pe_pm->xs[i - 1][selected_component])
                 || (xv == pe_pm->xs[i - 1][selected_component] && flag)) {
@@ -520,7 +519,6 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
     PHASE_ENVELOPE_PM *pe_pm;
     int flag, flag2, flag3 = 0;
     EOS *eos;
-    FILE *fp;
     double comp_min, comp_max;
 
     eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
@@ -753,9 +751,8 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
 {
     char file_name[100], file_name_upper[100], file_name_down[100];
     FILE *fp, *fp_upper, *fp_down;
-    double T, P;
+    double T;
     int i, j;
-    int flag, flag1;
 
     if (output_name == NULL) 
         return;
@@ -768,22 +765,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
     }
     fprintf(fp, "Temperature,Pressure\n");
 
-    flag = 0; 
-    flag1 = 0;
     for (i = 0; i < pe->n; i++) {
-#if 0
-        if (pe->Ps[i] > 1.0) {
-            flag = 1;
-        }
-
-        if (!flag && !flag1 && i % 5 != 0) {
-            flag1 = flag;
-
-            continue;
-        }
-        flag1 = flag;
-#endif
-
         if (comp_X != NULL) {
             for (j = 0; j < ncomp; j++) {
                 fprintf(fp, "%lf,", comp_X[j]);
@@ -806,52 +788,8 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
     sprintf(file_name_down, "%s-phase-envelope-down.csv", output_name);
     fp_down = fopen(file_name_down, "a");
 
-    flag = 0; 
-    flag1 = 0;
     for (i = 0; i < pe->n; i++) {
         T = pe->Ts[i];
-        P = pe->Ps[i];
-
-#if 0
-        if (pe->Ps[i] > 1.0) {
-            flag = 1;
-        }
-        else {
-            flag = 0;
-        }
-
-        if (!flag && !flag1 && i % 5 != 0 
-                && (i != pe->n - 1)) {
-            flag1 = flag;
-
-            continue;
-        }
-        flag1 = flag;
-
-        if (i > 1) {
-            if (fabs(T - pe->Ts[i - 1]) > 1e-5) {
-                double dP, dT, rate, rate0;
-
-                dP = P - pe->Ps[i - 1];
-                dT = T - pe->Ts[i - 1];
-                rate = fabs(dP / dT);
-
-                dP = pe->Ps[i - 2] - pe->Ps[i - 1];
-                dT = pe->Ts[i - 2] - pe->Ts[i - 1];
-
-                if (dT == 0.0) {
-                    rate0 = rate;
-                }
-                else {
-                    rate0 = fabs(dP / dT);
-                }
-
-                if (rate > rate0 + 30.0 || rate + 30.0 < rate0) {
-                    continue;
-                }
-            }
-        }
-#endif
 
         if (i == 0 || (i > 0 && T > pe->Ts[i - 1])
                 || (comp_X == NULL 

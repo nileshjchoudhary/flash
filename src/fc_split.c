@@ -184,7 +184,7 @@ double flash_calculation_calculate_RachfordRice_equation_derivative(double *K, d
 
 double flash_calculation_solve_RachfordRice_equation(double *K, double *z, double n_V0, int ncomp)
 {
-    int i, itr = 0;
+    int itr = 0;
     double n_V = n_V0, F, J, d;
 
     while(1) {
@@ -436,9 +436,6 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     flash_calculation_calculate_phase_density(phase_L);
 
     if (phase_V->density > phase_L->density) {
-        printf("temp: %e, pres: %e, Fv: %e\n", eos->temp, eos->pres, F_v);
-        printf("density_V: %e, density_L: %e\n", phase_V->density, 
-                phase_L->density);
         F_v = 1.0 - F_v;
         for (i = 0; i < ncomp; i++) {
             K[i] = 1.0 / K0[i];
@@ -574,12 +571,10 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
     int n_pres, n_temp;
     double *pres_list, *temp_list;
     SPLIT_MAP *sm;
-    int first, status;
+    int status;
     double Fv, Fv0, *K0, *K, solve_time;
     EOS *eos;
     PHASE *phase;
-    char file_name[100];
-    FILE *fp;
 
     n_pres = (int)((P_max - P_min) / dP);
     n_temp = (int)((T_max - T_min) / dT);
@@ -769,13 +764,11 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
     int n_pres, n_x;
     double *pres_list, *x_list;
     SPLIT_PM_MAP *sm;
-    int first, status;
+    int status;
     double Fv, Fv0, *K0, *K, *x, sum_no_selected, 
            solve_time;
     EOS *eos;
     PHASE *phase;
-    char file_name[100];
-    FILE *fp;
 
     n_pres = (int)((P_max - P_min) / dP);
     pres_list = malloc(n_pres * sizeof(*pres_list));
@@ -1011,3 +1004,26 @@ void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm)
 
     free(*sm);
 }
+
+double flash_calculation_split_time_cost()
+{
+    return split_solve_time;
+}
+
+int flash_calculation_split_iteration_number()
+{
+    return split_itr;
+}
+
+int flash_calculation_split_failure_number()
+{
+    return split_failure;
+}
+
+double flash_calculation_split_pred_time_cost()
+{
+    return split_pred_time;
+}
+
+
+

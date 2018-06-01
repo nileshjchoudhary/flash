@@ -48,5 +48,10 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 void flash_calculation_split_map_free(SPLIT_MAP **sm);
 void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm);
 
+double flash_calculation_split_time_cost(void);
+int flash_calculation_split_iteration_number(void);
+int flash_calculation_split_failure_number(void);
+double flash_calculation_split_pred_time_cost(void);
+
 #define FC_SPLIT
 #endif

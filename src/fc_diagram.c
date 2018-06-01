@@ -14,7 +14,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
 {
     /* default value: dP 1.0, dT 1.0, *pe = NULL */
     /* The number of lines */
-    int i, j, ith, ncomp = eos->ncomp, Ts_Ps_count, T_nstep, P_nstep, T_nstep2;
+    int i, j, ith, ncomp = eos->ncomp, T_nstep, P_nstep, T_nstep2;
     PHASE_DIAGRAM *pd;
     double Tc, Pc;
 
@@ -45,7 +45,7 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
     T_nstep = pd->pe->n / 2;
 
     for (ith = 0; ith < nF; ith++) {
-        double Fv, P_last, T_last, P, T;
+        double Fv, P_last, P, T;
         double *K, *K0;
         int first;
         double P_start0, T_start0;
@@ -59,7 +59,6 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
         pd->pl[ith]->T = malloc(T_nstep * sizeof(*(pd->pl[ith]->T)));
 
         P_last = 0.0;
-        T_last = 0.0;
         P = 0.0;
         K = NULL;
         K0 = malloc(ncomp * sizeof(*K0));
@@ -172,7 +171,6 @@ PHASE_DIAGRAM * flash_calculation_phase_diagram_construction(EOS *eos, double *z
                     }
 
                     P_last = P;
-                    T_last = T;
 
                     pd->pl[ith]->n += 1;
                 }
@@ -268,7 +266,7 @@ PHASE_DIAGRAM * flash_calculation_draw_phase_diagram(COMP_LIST *comp_list,
     flash_calculation_phase_envelope_output(pd->pe,
             comp_X, ncomp, output_name);
 
-    if (output_name == NULL) {
+    if (output_name != NULL) {
         for (j = 0; j < pd->n_line; j++) {
             sprintf(file_name, "%s-phase-diagram-F%lf.csv", output_name, pd->pl[j]->F);
             fp = fopen(file_name, "a");

@@ -1,0 +1,11 @@
+type        split
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T_min       100.0
+T_max       700.0
+P_min       10.0
+P_max       140.0
+dP          1.33
+dT          1.33
+output      C1C6C10-split

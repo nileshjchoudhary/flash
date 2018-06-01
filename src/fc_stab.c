@@ -1,6 +1,5 @@
 #include "fc.h"
 
-static int verb = 0;
 static int stab_itr = 0;
 static double stab_solve_time = 0.;
 static double stab_pred_time = 0.;
@@ -61,13 +60,9 @@ double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
     int ncomp = phase->ncomp, n_guess, i, j;
     double *K, Xi, *est;
     EOS *eos = phase->eos;
-    double P, T;
 
     est = malloc((ncomp + 4) * ncomp * sizeof(*est));
     n_guess = 0;
-
-    P = eos->pres;
-    T = eos->temp;
 
     K = malloc(ncomp * sizeof(*K));
     flash_calculation_estimate_K(eos, K);
@@ -359,11 +354,11 @@ int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
 
 int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double tol)
 {
-    int ncomp = phase->ncomp, i, j, n_guess, itr;
+    int ncomp = phase->ncomp, i, j, n_guess, itr = 0;
     double *D, *dD, *res, *est;
     double *x_t, *dx_t, *X_t, error;
     PHASE *phase_t;
-    int system_status;
+    int system_status = -1;
 
     D = malloc(ncomp * sizeof(*D));
     dD = malloc(ncomp * ncomp * sizeof(*dD));
@@ -702,8 +697,6 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
     PHASE *phase;
     STABILITY_MAP *sm;
     int status;
-    char file_unstable[100], file_liquid[100], file_vapor[100], file_combination[100];
-    FILE *fp;
     double solve_time, pred_time;
 
     n_pres = (int)((P_max - P_min) / dP);
@@ -821,8 +814,6 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
     PHASE *phase;
     STABILITY_PM_MAP *sm;
     int status;
-    char file_unstable[100], file_liquid[100], file_vapor[100], file_combination[100];
-    FILE *fp;
     double solve_time, pred_time;
 
     x = malloc(ncomp * sizeof(*x));
@@ -964,7 +955,6 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
 
 void flash_calculation_stability_map_free(STABILITY_MAP **sm)
 {
-    int i;
     STABILITY_MAP *sm0 = *sm;
 
     free(sm0->unstable_pres);
@@ -1004,3 +994,19 @@ void flash_calculation_stability_PM_map_free(STABILITY_PM_MAP **sm)
 
     free(*sm);
 }
+
+double flash_calculation_stability_time_cost()
+{
+    return stab_solve_time;
+}
+
+int flash_calculation_stability_iteration_number()
+{
+    return stab_itr;
+}
+
+double flash_calculation_stability_pre_time_cost()
+{
+    return stab_pred_time;
+}
+

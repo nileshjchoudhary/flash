@@ -549,7 +549,7 @@ double flash_calculation_calculate_matrix_determinant(double *Q, int dim)
 double flash_calculation_critical_point_calculate_Q_det(double *F, PHASE *phase, 
         double Tc, double *Qij)
 {   
-	int i, j, ncomp = phase->ncomp;
+	int ncomp = phase->ncomp;
 	double *alpha, *beta, det_Q;
     
     alpha = malloc(ncomp * sizeof(*alpha));

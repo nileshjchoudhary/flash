@@ -145,13 +145,13 @@ void flash_calculation_saturation_calculation_search_Tu_Ts(EOS *eos, double *z, 
 /* ### Calculate the pressure at the single-phase and two-phase boundary
 # With the $P_s$ and $P_u$, the bisection method is used to search the pressure at the single-phase and two-phase boundary. The method can also be used to generate phase diagram.
 */
-double flash_calculation_saturation_calculation_search_boundary_pressure(EOS *eos, double *z, double T, 
+double flash_calculation_saturation_calculation_search_boundary_pressure(EOS *eos, double *z, 
 	double Pu, double Ps, int search, double tol, int search_status, double *K)
 {
 	/* search: 0 upper, 1 down */
 	/* search_status: -1 anyone, 0 unstable, 1 stable */
-	int ncomp = eos->ncomp, status;
-	double P_max, P_min, P_mid;
+	int status;
+	double P_max = 0.0, P_min = 0.0, P_mid;
 	PHASE *phase;
 
     if (search == 0) {
@@ -376,7 +376,7 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
         int search, double search_step, double P_max)
 {
 	/* search: 0 upper, 1 down */
-	int i, itr, ncomp = eos->ncomp;
+	int itr, ncomp = eos->ncomp;
 	double Pu_Ps[2], Pu, Ps, P0;
 	double *X, *x, *Ri, *K;
     PHASE *phase_x, *phase_z;
@@ -396,7 +396,7 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
     
 	/* Search unstable pressure */
     K = malloc(ncomp * sizeof(*K));
-    P0 = flash_calculation_saturation_calculation_search_boundary_pressure(eos, z, T, 
+    P0 = flash_calculation_saturation_calculation_search_boundary_pressure(eos, z, 
             Pu, Ps, search, 0.05, 0, K);
     
     if (P0 <= 1.0 && search == 1) {

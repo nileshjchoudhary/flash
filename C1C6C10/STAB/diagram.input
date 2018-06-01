@@ -8,4 +8,4 @@ P_min       10.0
 P_max       110.0
 dP          0.2
 dT          0.2
-output      C1C6C10-diagram
+output      C1C6C10-diagram-single

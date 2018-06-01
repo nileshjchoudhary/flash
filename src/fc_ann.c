@@ -316,7 +316,6 @@ FLASH_STAB_ANN * flash_calculation_stab_ann_model_new(char *file_head, int level
         double safeguard, double delta_p)
 {
     char file[1024];
-    int i;
     FLASH_STAB_ANN *fsa;
 
     printf("    Creating ANN ...\n");
@@ -429,7 +428,6 @@ void flash_calculation_split_ann_model_free(FLASH_SPLIT_ANN **fsa)
 
 void flash_calculation_stab_ann_model_free(FLASH_STAB_ANN **fsa)
 {
-    int i;
     FLASH_STAB_ANN *fsa0 = *fsa;
 
     if (fsa0 != NULL && fsa0->ann_upper != NULL) {
