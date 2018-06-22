@@ -492,7 +492,7 @@ void flash_calculation_output_split_calculation_map(SPLIT_MAP *sm,
     fprintf(fp, "\n");
 
     for (i = 0; i < sm->n; i++) {
-        if (filter && (fabs(sm->F[i]) < 1e-5 || fabs(sm->F[i] - 1.0) < 1e-5)) {
+        if (filter && fabs(sm->K[i][0]) < 1e-12) {
             continue;
         }
 
@@ -537,7 +537,7 @@ void flash_calculation_output_split_calculation_map_PM(SPLIT_PM_MAP *sm,
     fprintf(fp, "\n");
 
     for (i = 0; i < sm->n; i++) {
-        if (filter && (fabs(sm->F[i]) < 1e-5 || fabs(sm->F[i] - 1.0) < 1e-5)) {
+        if (filter && fabs(sm->K[i][0]) < 1e-12) {
             continue;
         }
 
@@ -758,7 +758,8 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
 
 SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_list, 
         double *comp_X, double T, double P_min, double P_max, double dP, 
-        int selected_component, double dxx, FLASH_SPLIT_ANN *fsa, char *output_name)
+        int selected_component, double *comp_range, 
+        double dxx, FLASH_SPLIT_ANN *fsa, char *output_name)
 {
     int i, j, k, ncomp = comp_list->ncomp;
     int n_pres, n_x;
@@ -769,6 +770,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
            solve_time;
     EOS *eos;
     PHASE *phase;
+    double comp_min, comp_max;
 
     n_pres = (int)((P_max - P_min) / dP);
     pres_list = malloc(n_pres * sizeof(*pres_list));
@@ -776,12 +778,21 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
         pres_list[i] = P_min + i * dP;
     }
 
-    n_x = (int)((1.0 - 0.001) / dxx) + 1;
-    x_list = malloc(n_x * sizeof(*x_list));
-    for (i = 0; i < n_x - 1; i++) {
-        x_list[i] = 0.001 + i * dxx;
+    if (comp_range == NULL) {
+        comp_min = 0.001;
+        comp_max = 1.0;
     }
-    x_list[n_x - 1] = 0.999;
+    else {
+        comp_min = comp_range[0];
+        comp_max = comp_range[1];
+    }
+
+    n_x = (int)((comp_max - comp_min) / dxx) + 1;
+    dxx = (comp_max - comp_min) / n_x;
+    x_list = malloc(n_x * sizeof(*x_list));
+    for (i = 0; i < n_x; i++) {
+        x_list[i] = comp_min + i * dxx;
+    }
 
     sm = malloc(sizeof(*sm));
     sm->n = n_pres * n_x;
@@ -810,7 +821,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 
     for (i = 0; i < n_pres; i++) {
         K = NULL;
-        Fv = Fv0 = 0.0;
+        Fv = Fv0 = 0.5;
 
         for (j = 0; j < n_x; j++) {
             for (k = 0; k < ncomp; k++) {
@@ -854,12 +865,15 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                     Fv0 = Fv;
 
                     for(k = 0; k < ncomp; k++) {
-                        if (K == NULL) {
+                        if (K == NULL || !(Fv0 < 1.0 && Fv0 > 0.0)) {
                             K00[k] = K0[k];
                         }
                         else {
                             K00[k] = K[k];
                         }
+                    }
+                    for(k = 0; k < ncomp; k++) {
+                        K00[k] = K0[k];
                     }
                 }
                 else {
@@ -894,15 +908,15 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                         }
 
                         if (verb) {
-                        printf("Fv0: %e\n", Fv0);
-                        printf("K: ");
+                            printf("Fv0: %e\n", Fv0);
+                            printf("K: ");
                         }
 
                         flash_calculation_estimate_K(eos, K000);
 
                         for (k = 0; k < ncomp; k++) {
                             if (verb) {
-                            printf("%e ", K00[k]);
+                                printf("%e ", K00[k]);
                             }
 
                             if (K00[k] < 0.0 || fabs(log(K00[k])) < 1e-4) {
@@ -911,7 +925,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                         }
 
                         if (verb) {
-                        printf("\n");
+                            printf("\n");
                         }
                     }
                 }
@@ -928,19 +942,19 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 
 
                 if (verb) {
-                printf("Fv: %e\n", Fv);
-                printf("KK: ");
+                    printf("Fv: %e\n", Fv);
+                    printf("KK: ");
                 }
                 for(k = 0; k < ncomp; k++) {
                     K0[k] = K00[k];
 
                     if (verb) {
-                    printf("%e ", K00[k]);
+                        printf("%e ", K00[k]);
                     }
                 }
                 free(K00);
                 if (verb) {
-                printf("\n");
+                    printf("\n");
                 }
 
                 sm->F[i * n_x + j] = Fv;

@@ -343,11 +343,6 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
                                 insert_T[insert_count], pe->Ps[i], 0, dP * 0.1, 
                                 P_max);
 
-#if 0
-                    printf("insert: Ps: %e %e, Ts: %e %e, insert_P: %e\n", pe->Ps[i], pe->Ps[i + 1],
-                            pe->Ts[i], pe->Ts[i + 1], insert_P[insert_count]);
-#endif
-
                     insert_count++;
                 }
             }
@@ -510,7 +505,7 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
     fclose(fp_down);
 }
 
-PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list, 
+PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(COMP_LIST *comp_list,
         double *z, double T, double P_est, double dP, int selected_component, double *comp_range, 
         double dx, double P_max, char *output)
 {
@@ -570,11 +565,6 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
 
             //printf("%lf ", X[k]);
         }
-#if 0
-        printf("\n");
-        printf("T: %lf\n", T);
-        printf("Pest: %lf\n", P);
-#endif
 
         P = flash_calculation_saturation_calculation(eos, X, T, P, 0, dP, P_max);
         //printf("Result: %lf\n", P);
@@ -645,13 +635,97 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
                 break;
             }
             else {
-                pe_pm->Ps[count] = 1.0;
+                pe_pm->Ps[count] = P;
                 pe_pm->xs[count] = malloc(ncomp * sizeof(double));
                 for (k = 0; k < ncomp; k++) {
                     pe_pm->xs[count][k] = X[k];
                 }
                 count += 1;
             }
+        }
+    }
+
+    while (1) {
+        int count0, *insert_index, insert_count, insert_count0;
+        int flag_dP = 1;
+        double *insert_P, **insert_X, *Ps_tmp, **X_tmp;
+
+        count0 = count;
+
+        insert_count = 0;
+        insert_index = malloc(count0 * sizeof(*insert_index));
+        insert_P = malloc(count0 * sizeof(*insert_P));
+        insert_X = malloc(count0 * sizeof(*insert_X));
+        for (i = 0; i < count0; i++) {
+            insert_X[i] = malloc(ncomp * sizeof(double));
+        }
+
+        for (i = 0; i < count0 - 1; i++) {
+            if (pe_pm->Ps[i] > 1.0 && pe_pm->Ps[i + 1] > 1.0
+                    && pe_pm->Ps[i] < P_max) {
+                if (fabs(pe_pm->Ps[i] - pe_pm->Ps[i + 1]) > dP) {
+                    flag_dP = 0;
+
+                    insert_index[insert_count] = i;
+
+                    for (k = 0; k < ncomp; k++) {
+                        insert_X[insert_count][k] 
+                            = (pe_pm->xs[i][k] + pe_pm->xs[i+1][k]) * 0.5;
+                    }
+
+                    insert_P[insert_count] 
+                        = flash_calculation_saturation_calculation(eos, 
+                                insert_X[insert_count], T, pe_pm->Ps[i], 
+                                0, dP * 0.1, P_max);
+                    insert_count++;
+                }
+            }
+        }
+
+        Ps_tmp = malloc(2 * (insert_count + count) * sizeof(*Ps_tmp));
+        X_tmp = malloc(2 * (insert_count + count) * sizeof(*X_tmp));
+        for (i = 0; i < 2 * (insert_count + count); i++) {
+            X_tmp[i] = malloc(ncomp * sizeof(double));
+        }
+
+        insert_count0 = 0;
+        count0 = 0;
+        for (i = 0; i < count; i++) {
+            Ps_tmp[count0] = pe_pm->Ps[i];
+            for (k = 0; k < ncomp; k++) {
+                X_tmp[count0][k] = pe_pm->xs[i][k];
+            }
+            count0++;
+
+            if (insert_count0 < insert_count
+                    && i == insert_index[insert_count0]) {
+                Ps_tmp[count0] = insert_P[insert_count0];
+                for (k = 0; k < ncomp; k++) {
+                    X_tmp[count0][k] = insert_X[insert_count0][k];
+                }
+                count0++;
+                insert_count0++;
+            }
+        }
+
+        free(insert_index);
+
+        free(pe_pm->Ps);
+        free(insert_P);
+        for (k = 0; k < count; k++) {
+            free(pe_pm->xs[k]);
+            free(insert_X[k]);
+        }
+        free(pe_pm->xs);
+        free(insert_X);
+
+        count += insert_count;
+
+        pe_pm->Ps = Ps_tmp;
+        pe_pm->xs = X_tmp;
+
+        if (flag_dP) {
+            break;
         }
     }
 
@@ -665,8 +739,10 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
     }
 
     P = pe_pm->Ps[count - 1] - 1.0;
-    if (P < 1.0)
+    if (P < 1.0 || fabs(pe_pm->Ps[count - 1] - P_max) < 1e-3) {
         P = 1.0;
+        flag2 = 1;
+    }
     last = count;
 
     for (i = last - 1; i >= 0; i--) {

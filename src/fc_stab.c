@@ -321,7 +321,7 @@ int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
     if (sum_K < 1e-2) 
         return -1;
 
-    if (sum_Y < 1.0) {
+    if (sum_Y < 1.0 + 1e-8) {
         return 1;
     }
     else {
@@ -433,7 +433,7 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
            otherwise break 
            if system_status is 'Unstable' or system_status is 'Stable':
            break */
-        if (system_status == 0) {
+        if (system_status != -1) {
             break;
         }
     }

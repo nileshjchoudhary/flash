@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
         sm = flash_calculation_draw_split_calculation_map_PM(comp_list, x, 
                 fm->T, fm->P_min, fm->P_max, fm->dP, fm->selected_component,
-                fm->dxx, fsa, fm->output);
+                NULL, fm->dxx, fsa, fm->output);
 
         for (i = 0; i < sm->n; i++) {
             sm->pres[i] = (sm->pres[i] - fm->P_min) / (fm->P_max - fm->dP - fm->P_min);
@@ -211,17 +211,35 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(fm->type, "split_PM_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list;
+        int nx, nx_rank;
+        double **x_list, **x_list_rank, comp_range[2];
         char output_rank[100];
 
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
+                comp_list->ncomp, &x_list);
+
+        if (fm->mole_range == NULL) {
+            comp_range[0] = 1.0 / fm->mole;
+            comp_range[1] = 1.0;
+        }
+        else {
+            comp_range[0] = (double)fm->mole_range[0] / fm->mole;
+            comp_range[1] = (double)fm->mole_range[1] / fm->mole;
+        }
 
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         if (nprocs == 1) {
@@ -232,8 +250,8 @@ int main(int argc, char **argv)
         }
 
         flash_calculation_generate_split_calculation_PM_data(comp_list, 
-                nx_rank, x_list + nx_begin, fm->T, fm->P_min, fm->P_max, 
-                fm->dP, fm->dxx, fsa, output_rank);
+                nx_rank, x_list_rank, fm->T, fm->P_min, fm->P_max, 
+                fm->dP, comp_range, fm->dxx, fsa, output_rank);
 
         for (i = 0; i < nx; i++) {
             free(x_list[i]);

@@ -872,7 +872,7 @@ void flash_calculation_generate_split_calculation_data(COMP_LIST *comp_list,
 
 void flash_calculation_generate_split_calculation_PM_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T, double P_min, double P_max, double dP, 
-        double dxx, FLASH_SPLIT_ANN *fsa, char *output)
+        double *comp_range, double dxx, FLASH_SPLIT_ANN *fsa, char *output)
 {
     int i, j, k, ncomp = comp_list->ncomp;
     SPLIT_PM_MAP *sm0, *sm;
@@ -907,7 +907,7 @@ void flash_calculation_generate_split_calculation_PM_data(COMP_LIST *comp_list,
         printf("\n");
 
         sm0 = flash_calculation_draw_split_calculation_map_PM(comp_list, x, 
-                T, P_min, P_max, dP, 0, dxx, fsa, output);
+                T, P_min, P_max, dP, 0, comp_range, dxx, fsa, output);
 
         sm->pres = realloc(sm->pres, 
                 (sm->n + sm0->n) * sizeof(*(sm->pres)));
@@ -1131,7 +1131,7 @@ void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list,
 
         //for (j = 0; j < ncomp; j++) {
         pe_pm0 = flash_calculation_phase_saturation_envelope_construction_PM(comp_list, 
-                x, T, 100.0, dP, 0, comp_range, dxx, P_max, output);
+                x, T, 200.0, dP, 0, comp_range, dxx, P_max, output);
 
         pe_pm->Ps = realloc(pe_pm->Ps, 
                 (pe_pm->n + pe_pm0->n) * sizeof(*(pe_pm->Ps)));

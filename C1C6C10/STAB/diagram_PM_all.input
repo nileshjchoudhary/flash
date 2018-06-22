@@ -7,7 +7,7 @@ P_min       10.0
 P_max       300.0
 dP          2.0
 mole        100
-mole_range  20  70    1 98   1 98
+mole_range  1  98    1 98   1 98
 mole_d          1      20     10
-dxx         0.01
+dxx         0.03
 output      C1C6C10-diagram-PM

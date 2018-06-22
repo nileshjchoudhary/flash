@@ -44,7 +44,7 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
         double dT, double dP, FLASH_SPLIT_ANN *fsa, char *output_name);
 SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_list, 
         double *comp_X, double T, double P_min, double P_max, double dP, 
-        int selected_component, double dxx, FLASH_SPLIT_ANN *fsa, char *output_name);
+        int selected_component, double *comp_range, double dxx, FLASH_SPLIT_ANN *fsa, char *output_name);
 void flash_calculation_split_map_free(SPLIT_MAP **sm);
 void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm);
 
