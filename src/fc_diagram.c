@@ -272,7 +272,7 @@ PHASE_DIAGRAM * flash_calculation_draw_phase_diagram(COMP_LIST *comp_list,
             fp = fopen(file_name, "a");
 
             for (i = 0; i < ncomp; i++) {
-                fprintf(fp, "Component %d,", i);
+                fprintf(fp, "Component %d,", i + 1);
             }
             fprintf(fp, "Temperature,Pressure,Fv\n");
 

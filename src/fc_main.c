@@ -67,23 +67,26 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(fm->type, "stability_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list;
+        int nx, nx_rank;
+        double **x_list, **x_list_rank;
         char output_rank[100];
 
-#if 0
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
-#endif
-
-        nx = flash_calculation_generate_x_new(fm->mole, fm->mole_range, fm->mole_dx,
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
                 comp_list->ncomp, &x_list);
 
-
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         if (nprocs == 1) {
@@ -94,7 +97,7 @@ int main(int argc, char **argv)
         }
 
         flash_calculation_generate_stability_analysis_data(comp_list, nx_rank, 
-                x_list + nx_begin, fm->T_min, fm->T_max, fm->P_min, fm->P_max, 
+                x_list_rank, fm->T_min, fm->T_max, fm->P_min, fm->P_max, 
                 fm->dT, fm->dP, fsta, output_rank);
 
         for (i = 0; i < nx; i++) {
@@ -104,17 +107,26 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(fm->type, "stability_PM_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list;
+        int nx, nx_rank;
+        double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_x(0.005, 1.0, fm->dx, comp_list->ncomp, 
-                0.005, &x_list);
+        nx = flash_calculation_generate_x_new_2(fm->mole, 
+                fm->mole_range, fm->mole_d,
+                comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
-        nx_begin = nx_rank * myrank;
-        if (myrank == nprocs - 1) {
-            nx_rank += nx - nx_rank * nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
         }
 
         if (nprocs == 1) {
@@ -125,7 +137,7 @@ int main(int argc, char **argv)
         }
 
         flash_calculation_generate_stability_analysis_PM_data(comp_list, nx_rank, 
-                x_list + nx_begin, fm->T, fm->P_min, fm->P_max, fm->dP, 
+                x_list_rank, fm->T, fm->P_min, fm->P_max, fm->dP, 
                 fm->dxx, fsta, output_rank);
 
         for (i = 0; i < nx; i++) {
@@ -375,83 +387,33 @@ int main(int argc, char **argv)
         free(x_list_rank);
     }
 
-
-
-
-
-
-
-#if 0
-    if (strcmp(fm->type, "thermal_data") == 0) {
-        int nx, nx_rank, nx_begin;
-        double **x_list, **x_list_rank;
-        char output_rank[100];
-
-        nx = flash_calculation_generate_x_new_2(fm->mole, 
-                fm->mole_range, fm->mole_d,
-                comp_list->ncomp, &x_list);
-
-        nx_rank = nx / nprocs;
-        if (myrank < nx - nx_rank * nprocs) {
-            nx_rank++;
-        }
-
-        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
-        j = 0;
-        for (i = 0; i < nx; i++) {
-            if (i % nprocs == myrank) {
-                x_list_rank[j] = x_list[i];
-                j++;
-            }
-        }
-
-        printf("rank[%d]---  nx: %d, nx_rank: %d, nx_begin: %d\n", myrank, nx, nx_rank, nx_begin);
-
-        if (nprocs == 1) {
-            sprintf(output_rank, "%s", fm->output);
-        }
-        else {
-            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
-        }
-
-        flash_calculation_generate_thermal_data(comp_list, 
-                nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
-                fm->P_max, fm->dT, fm->dP, output_rank);
-
-        for (i = 0; i < nx; i++) {
-            free(x_list[i]);
-        }
-        free(x_list);
-        free(x_list_rank);
-    }
-#endif
-
-
-
-
-    
-#if 1
     {
-        int stab_itr = flash_calculation_stability_iteration_number(),
-            split_failure_itr = flash_calculation_split_failure_number(),
-            split_itr = flash_calculation_split_iteration_number();
-        double stab_pre_time = flash_calculation_stability_pre_time_cost(),
-            stab_time = flash_calculation_stability_time_cost(),
-            split_pre_time = flash_calculation_split_pred_time_cost(),
-            split_time = flash_calculation_split_time_cost();
+        int stab_itr, split_failure_itr, split_itr;
+        double stab_pre_time, stab_time, split_pre_time,
+            split_time;
+
+        stab_itr = flash_calculation_stability_iteration_number();
+        split_failure_itr = flash_calculation_split_failure_number();
+        split_itr = flash_calculation_split_iteration_number();
+
+        stab_pre_time = flash_calculation_stability_pre_time_cost();
+        stab_time = flash_calculation_stability_time_cost();
+        split_pre_time = flash_calculation_split_pred_time_cost();
+        split_time = flash_calculation_split_time_cost();
 
         if (myrank == 0) {
             printf("Stability calculation iteration: %d\n", stab_itr);
-            printf("Stability calculation ANN prediction time: %lf\n", stab_pre_time);
+            printf("Stability calculation ANN prediction time: %lf\n", 
+                    stab_pre_time);
             printf("Stability calculation solve time: %lf\n", stab_time);
 
             printf("Split calculation failure: %d\n", split_failure_itr);
             printf("Split calculation iteration: %d\n", split_itr);
-            printf("Split calculation ANN prediction time: %lf\n", split_pre_time);
+            printf("Split calculation ANN prediction time: %lf\n", 
+                    split_pre_time);
             printf("Split calculation solve time: %lf\n", split_time);
         }
     }
-#endif
 
 
     if (fsa != NULL) {
@@ -465,7 +427,7 @@ int main(int argc, char **argv)
     time = flash_calculation_get_time(NULL) - time;
 
     if (myrank == 0) {
-        printf("\nTOTAL COMPUTATIONAL TIME: %lf SECS.\n", time);
+        printf("\nTOTAL COMPUTATIONAL TIME: %lf SECS.\n\n", time);
     }
     //MPI_Barrier(MPI_COMM_WORLD);
 

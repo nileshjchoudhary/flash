@@ -498,7 +498,7 @@ void flash_calculation_output_split_calculation_map(SPLIT_MAP *sm,
     sprintf(file_name, "%s-split-calculation.csv", output_name);
     fp = fopen(file_name, "a");
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure,Fv");
     for (j = 0; j < ncomp; j++) {
@@ -543,7 +543,7 @@ void flash_calculation_output_split_calculation_map_PM(SPLIT_PM_MAP *sm,
     sprintf(file_name, "%s-split-calculation-PM.csv", output_name);
     fp = fopen(file_name, "a");
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Pressure,Fv");
     for (j = 0; j < ncomp; j++) {

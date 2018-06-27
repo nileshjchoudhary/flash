@@ -457,7 +457,7 @@ void flash_calculation_phase_envelope_PM_output(PHASE_ENVELOPE_PM *pe_pm,
     fp = fopen(file_name, "a");
 
     for (k = 0; k < ncomp; k++) {
-        fprintf(fp, "Component %d,", k);
+        fprintf(fp, "Component %d,", k + 1);
     }
     fprintf(fp, "Pressure\n");
 
@@ -837,7 +837,7 @@ void flash_calculation_phase_envelope_output(PHASE_ENVELOPE *pe,
     fp = fopen(file_name, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure\n");
 

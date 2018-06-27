@@ -490,7 +490,7 @@ void flash_calculation_output_stability_analysis_map(STABILITY_MAP *sm,
     fp = fopen(file_unstable, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure\n");
 
@@ -506,7 +506,7 @@ void flash_calculation_output_stability_analysis_map(STABILITY_MAP *sm,
     fp = fopen(file_liquid, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure\n");
 
@@ -522,7 +522,7 @@ void flash_calculation_output_stability_analysis_map(STABILITY_MAP *sm,
     fp = fopen(file_vapor, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure\n");
 
@@ -538,7 +538,7 @@ void flash_calculation_output_stability_analysis_map(STABILITY_MAP *sm,
     fp = fopen(file_combination, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Temperature,Pressure,Unstable,Liquid,Vapor\n");
     for (i = 0; i < sm->n_unstable; i++) {
@@ -576,7 +576,7 @@ void flash_calculation_output_stability_analysis_map_PM(STABILITY_PM_MAP *sm,
     fp = fopen(file_unstable, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Pressure\n");
 
@@ -599,7 +599,7 @@ void flash_calculation_output_stability_analysis_map_PM(STABILITY_PM_MAP *sm,
     fp = fopen(file_liquid, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Pressure\n");
 
@@ -622,7 +622,7 @@ void flash_calculation_output_stability_analysis_map_PM(STABILITY_PM_MAP *sm,
     fp = fopen(file_vapor, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Pressure\n");
 
@@ -645,7 +645,7 @@ void flash_calculation_output_stability_analysis_map_PM(STABILITY_PM_MAP *sm,
     fp = fopen(file_combination, "a");
 
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, "Component %d,", j);
+        fprintf(fp, "Component %d,", j + 1);
     }
     fprintf(fp, "Pressure,Unstable,Liquid,Vapor\n");
     for (i = 0; i < sm->n_unstable; i++) {
