@@ -51,7 +51,6 @@ void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm);
 double flash_calculation_split_time_cost(void);
 int flash_calculation_split_iteration_number(void);
 int flash_calculation_split_failure_number(void);
-double flash_calculation_split_pred_time_cost(void);
 
 #define FC_SPLIT
 #endif

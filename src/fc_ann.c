@@ -1,5 +1,8 @@
 #include "fc.h"
 
+static double split_pred_time = 0.;
+static double stab_pred_time = 0.;
+
 FLASH_TENSOR * flash_calculation_tensor_read(char *file)
 {
     FILE *fn;
@@ -342,8 +345,16 @@ int flash_calculation_split_ann_predict(FLASH_SPLIT_ANN *fsa, double *input,
 {
     int i;
     FLASH_TENSOR *ft;
+    double pred_time;
 
-    if (fsa->ann_F == NULL) { return 0; }
+    pred_time = flash_calculation_get_time(NULL);
+
+    if (fsa->ann_F == NULL) { 
+        pred_time = flash_calculation_get_time(NULL) - pred_time;
+        split_pred_time += pred_time;
+
+        return 0; 
+    }
 
     ft = malloc(sizeof(*ft));
     ft->nr = 1;
@@ -362,6 +373,9 @@ int flash_calculation_split_ann_predict(FLASH_SPLIT_ANN *fsa, double *input,
 
     flash_calculation_tensor_free(&ft);
 
+    pred_time = flash_calculation_get_time(NULL) - pred_time;
+    split_pred_time += pred_time;
+
     return 1;
 }
 
@@ -371,8 +385,14 @@ int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
     int i;
     FLASH_TENSOR *ft;
     double Pu, Pd, P;
+    double pred_time;
+
+    pred_time = flash_calculation_get_time(NULL);
 
     if (fsa->ann_upper == NULL) {
+        pred_time = flash_calculation_get_time(NULL) - pred_time;
+        stab_pred_time += pred_time;
+
         return 0;
     }
 
@@ -403,6 +423,9 @@ int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
     else {
         *stable = 1;
     }
+
+    pred_time = flash_calculation_get_time(NULL) - pred_time;
+    stab_pred_time += pred_time;
 
     return 1;
 }
@@ -440,3 +463,25 @@ void flash_calculation_stab_ann_model_free(FLASH_STAB_ANN **fsa)
 
     free(*fsa);
 }
+
+double flash_calculation_split_pred_time_cost()
+{
+    double split_pred_time0 = split_pred_time;
+
+    MPI_Allreduce(&split_pred_time0, &split_pred_time, 
+            1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    return split_pred_time;
+}
+
+
+double flash_calculation_stability_pre_time_cost()
+{
+    double stab_pred_time0 = stab_pred_time;
+
+    MPI_Allreduce(&stab_pred_time0, &stab_pred_time, 
+            1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    return stab_pred_time;
+}
+

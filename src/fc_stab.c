@@ -2,7 +2,6 @@
 
 static int stab_itr = 0;
 static double stab_solve_time = 0.;
-static double stab_pred_time = 0.;
 
 /* ## 2. Stability Test
 # The following code is designed for stability test. */
@@ -359,6 +358,9 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
     double *x_t, *dx_t, *X_t, error;
     PHASE *phase_t;
     int system_status = -1;
+    double solve_time;
+
+    solve_time = flash_calculation_get_time(NULL);
 
     D = malloc(ncomp * sizeof(*D));
     dD = malloc(ncomp * ncomp * sizeof(*dD));
@@ -461,6 +463,9 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
     free(est);
 
     flash_calculation_phase_free(&phase_t);
+
+    solve_time = flash_calculation_get_time(NULL) - solve_time;
+    stab_solve_time += solve_time;
 
     return system_status;
 }
@@ -697,7 +702,6 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
     PHASE *phase;
     STABILITY_MAP *sm;
     int status;
-    double solve_time, pred_time;
 
     n_pres = (int)((P_max - P_min) / dP);
     n_temp = (int)((T_max - T_min) / dT);
@@ -734,7 +738,6 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
             eos->pres = pres_list[i];
             eos->temp = temp_list[j];
 
-            solve_time = flash_calculation_get_time(NULL);
             if (fsa != NULL) {
                 double *input;
                 int n, k;
@@ -754,9 +757,6 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
             if (!flag) {
                 status = flash_calculation_stability_analysis_QNSS(phase, NULL, 1e-10);
             }
-
-            solve_time = flash_calculation_get_time(NULL) - solve_time;
-            stab_solve_time += solve_time;
 
             if (status == 1) {
                 if (phase->phase_no == 0) {
@@ -814,7 +814,6 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
     PHASE *phase;
     STABILITY_PM_MAP *sm;
     int status;
-    double solve_time, pred_time;
 
     x = malloc(ncomp * sizeof(*x));
     n_pres = (int)((P_max - P_min) / dP);
@@ -873,8 +872,6 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
             eos->pres = pres_list[i];
             eos->temp = T;
 
-            solve_time = flash_calculation_get_time(NULL);
-
             if (fsa != NULL) {
                 double *input;
                 int n, k;
@@ -894,8 +891,6 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
                 status = flash_calculation_stability_analysis_QNSS(phase, NULL, 1e-10);
             }
 
-            solve_time = flash_calculation_get_time(NULL) - solve_time;
-            stab_solve_time += solve_time;
 
             if (status == 1) {
                 if (phase->phase_no == 0) {
@@ -997,16 +992,20 @@ void flash_calculation_stability_PM_map_free(STABILITY_PM_MAP **sm)
 
 double flash_calculation_stability_time_cost()
 {
+    double stab_solve_time0 = stab_solve_time;
+
+    MPI_Allreduce(&stab_solve_time0, &stab_solve_time, 
+            1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
     return stab_solve_time;
 }
 
 int flash_calculation_stability_iteration_number()
 {
+    int stab_itr0 = stab_itr;
+
+    MPI_Allreduce(&stab_itr0, &stab_itr, 1, MPI_INT, 
+            MPI_SUM, MPI_COMM_WORLD);
+
     return stab_itr;
 }
-
-double flash_calculation_stability_pre_time_cost()
-{
-    return stab_pred_time;
-}
-

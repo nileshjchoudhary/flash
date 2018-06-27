@@ -4,7 +4,6 @@ static int verb = 0;
 static int split_failure = 0;
 static int split_itr = 0;
 static double split_solve_time = 0.;
-static double split_pred_time = 0.;
 
 /* ## 3. Two-phase Flash Calculation
 # The following code is designed for two-phase flash calculations.
@@ -88,14 +87,17 @@ void flash_calculation_calculate_equilibrium_equation_derivative(PHASE *phase_L,
     for (i = 0; i < ncomp; i++) {
         for (j = 0; j < ncomp; j++) {
             if (i == j) {
-                dG[i * ncomp + j] = 1.0 / phase_V->mf[i] * dx_v[i] - 1.0 / phase_L->mf[i] * dx_l[i];
+                dG[i * ncomp + j] = 1.0 / phase_V->mf[i] * dx_v[i] 
+                    - 1.0 / phase_L->mf[i] * dx_l[i];
             }
             else {
                 dG[i * ncomp + j] = 0.0;
             }
 
-            dG[i * ncomp + j] += 1.0 / phase_V->phi[i] * phase_V->dphi_dx[i * ncomp + j] * dx_v[j]
-                - 1.0 / phase_L->phi[i] * phase_L->dphi_dx[i * ncomp + j] * dx_l[j];
+            dG[i * ncomp + j] += 1.0 / phase_V->phi[i] 
+                * phase_V->dphi_dx[i * ncomp + j] * dx_v[j]
+                - 1.0 / phase_L->phi[i] 
+                * phase_L->dphi_dx[i * ncomp + j] * dx_l[j];
         }
     }
 }
@@ -126,6 +128,11 @@ void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, in
 
     for (i = 0; i < ncomp; i++) {
         K[i] += x[i];
+
+        if (K[i] < 0.0) {
+            K[i] -= x[i];
+            K[i] *= 0.5;
+        }
     }
 
     free(x);
@@ -211,7 +218,7 @@ double flash_calculation_solve_RachfordRice_equation(double *K, double *z, doubl
         itr += 1;
         if (itr > 100)
             break;
-	}       
+	}
             
     return n_V;
 }
@@ -221,7 +228,8 @@ double flash_calculation_solve_RachfordRice_equation(double *K, double *z, doubl
 # K_i = K_i \frac{\phi_{l,i}}{\phi_{v,i}}
 # $$
 */
-void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V, double *K, int ncomp)
+void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V, 
+        double *K, int ncomp)
 {
 	int i;
 
@@ -235,7 +243,8 @@ void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V, double *
     At range [0, 1.0] find a value which makes Rachford-Rich is zero
     using bisection method
 */
-double flash_calculation_two_phase_flash_calculation_calculate_initial_F(double *K, double *z, int ncomp) 
+double flash_calculation_two_phase_flash_calculation_calculate_initial_F(double *K, 
+        double *z, int ncomp) 
 {
 	double tol = 1e-3, F_min, F_max, 
            V_min, V_max, F_mid, V_mid;
@@ -316,7 +325,10 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
 	double F_v, sum_K, error, *x_l, *x_v;
 	double *G, *dG, *dx_l, *dx_v, *K0;
     PHASE *phase_L, *phase_V;
+    double solve_time;
     
+    solve_time = flash_calculation_get_time(NULL);
+
     /* Initial estimate K */
 	K0 = malloc(ncomp * sizeof(*K0));
     if (Fv <= 0.0) {
@@ -427,7 +439,7 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
         printf("Pres: %e, Temp: %e, Itr: %d\n", eos->pres, eos->temp, itr);
     }
 
-    if (fabs(F_v) < 1e-5 || fabs(F_v - 1.0) < 1e-5) {
+    if (fabs(F_v) < 1e-8 || fabs(F_v - 1.0) < 1e-8) {
         split_failure ++;
     }
     split_itr += itr;
@@ -458,6 +470,9 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     flash_calculation_phase_free(&phase_L);
     flash_calculation_phase_free(&phase_V);
     /* printf("##### Two-phase flash calculation iterations: %d" %itr); */
+
+    solve_time = flash_calculation_get_time(NULL) - solve_time;
+    split_solve_time += solve_time;
     
     return F_v;
 }
@@ -650,7 +665,7 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
                 }
                 else {
                     int flag = 0;
-                    double input[ncomp + 2], K000[ncomp], prediction_time;
+                    double input[ncomp + 2], K000[ncomp];
 
                     for (k = 0; k < ncomp; k++) {
                         input[k] = comp_X[k];
@@ -666,15 +681,9 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
                     printf("\n");
 #endif
 
-                    prediction_time = flash_calculation_get_time(NULL);
                     flag = flash_calculation_split_ann_predict(fsa, input, ncomp + 2, 
                             &Fv0, K00);
-                    prediction_time = flash_calculation_get_time(NULL) - prediction_time;
-                    split_pred_time += prediction_time;
 
-                    if (verb) {
-                        printf("Prediction time: %e\n", prediction_time);
-                    }
 
                     if (!flag) {
                         Fv0 = -1.0;
@@ -705,11 +714,8 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
                     }
                 }
 
-                solve_time = flash_calculation_get_time(NULL);
                 Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
                         comp_X, K00, Fv0, 1e-10);
-                solve_time = flash_calculation_get_time(NULL) - solve_time;
-                split_solve_time += solve_time;
 
                 if (verb && ((fabs(Fv) < 1e-5 || fabs(Fv - 1.0) < 1e-5))) {
                     printf("Split calculation time: %e\n", solve_time);
@@ -878,22 +884,16 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                 }
                 else {
                     int flag = 0;
-                    double input[ncomp + 1], K000[ncomp], prediction_time;
+                    double input[ncomp + 1], K000[ncomp];
 
                     for (k = 0; k < ncomp; k++) {
                         input[k] = x[k];
                     }
                     input[ncomp] = pres_list[i];
 
-                    prediction_time = flash_calculation_get_time(NULL);
                     flag = flash_calculation_split_ann_predict(fsa, input, ncomp + 1, 
                             &Fv0, K00);
-                    prediction_time = flash_calculation_get_time(NULL) - prediction_time;
-                    split_pred_time += prediction_time;
 
-                    if (verb) {
-                        printf("Prediction time: %e\n", prediction_time);
-                    }
 
                     if (!flag) {
                         Fv0 = -1.0;
@@ -930,11 +930,8 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                     }
                 }
 
-                solve_time = flash_calculation_get_time(NULL);
                 Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
                         x, K00, Fv0, 1e-10);
-                solve_time = flash_calculation_get_time(NULL) - solve_time;
-                split_solve_time += solve_time;
 
                 if (verb && ((fabs(Fv) < 1e-5 || fabs(Fv - 1.0) < 1e-5))) {
                     printf("Split calculation time: %e\n", solve_time);
@@ -1021,23 +1018,34 @@ void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm)
 
 double flash_calculation_split_time_cost()
 {
+    double split_solve_time0 = split_solve_time;
+
+    MPI_Allreduce(&split_solve_time0, &split_solve_time, 
+            1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
     return split_solve_time;
 }
 
 int flash_calculation_split_iteration_number()
 {
+    int split_itr0 = split_itr;
+
+    MPI_Allreduce(&split_itr0, &split_itr, 
+            1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
     return split_itr;
 }
 
 int flash_calculation_split_failure_number()
 {
+    int split_failure0 = split_failure;
+
+    MPI_Allreduce(&split_failure0, &split_failure, 
+            1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
     return split_failure;
 }
 
-double flash_calculation_split_pred_time_cost()
-{
-    return split_pred_time;
-}
 
 
 

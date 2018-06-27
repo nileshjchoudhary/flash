@@ -53,5 +53,8 @@ int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
 void flash_calculation_split_ann_model_free(FLASH_SPLIT_ANN **fsa);
 void flash_calculation_stab_ann_model_free(FLASH_STAB_ANN **fsa);
 
+double flash_calculation_split_pred_time_cost(void);
+double flash_calculation_stability_pre_time_cost(void);
+
 #define FC_ANN
 #endif

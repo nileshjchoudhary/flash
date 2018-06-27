@@ -10,8 +10,11 @@ int main(int argc, char **argv)
     FLASH_MODEL *fm;
     FLASH_SPLIT_ANN *fsa = NULL;
     FLASH_STAB_ANN *fsta = NULL;
+    double time;
 
     MPI_Init(&argc, &argv);
+
+    time = flash_calculation_get_time(NULL);
 
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -426,28 +429,29 @@ int main(int argc, char **argv)
 
 
 
+    
+#if 1
+    {
+        int stab_itr = flash_calculation_stability_iteration_number(),
+            split_failure_itr = flash_calculation_split_failure_number(),
+            split_itr = flash_calculation_split_iteration_number();
+        double stab_pre_time = flash_calculation_stability_pre_time_cost(),
+            stab_time = flash_calculation_stability_time_cost(),
+            split_pre_time = flash_calculation_split_pred_time_cost(),
+            split_time = flash_calculation_split_time_cost();
 
+        if (myrank == 0) {
+            printf("Stability calculation iteration: %d\n", stab_itr);
+            printf("Stability calculation ANN prediction time: %lf\n", stab_pre_time);
+            printf("Stability calculation solve time: %lf\n", stab_time);
 
-
-
-
-
-
-    printf("Stability calculation iteration: %d\n", 
-            flash_calculation_stability_iteration_number());
-    printf("Stability calculation ANN prediction time: %lf\n", 
-            flash_calculation_stability_pre_time_cost());
-    printf("Stability calculation solve time: %lf\n", 
-            flash_calculation_stability_time_cost());
-
-    printf("Split calculation failure: %d\n",
-            flash_calculation_split_failure_number());
-    printf("Split calculation iteration: %d\n", 
-            flash_calculation_split_iteration_number());
-    printf("Split calculation ANN prediction time: %lf\n", 
-            flash_calculation_split_pred_time_cost());
-    printf("Split calculation solve time: %lf\n", 
-            flash_calculation_split_time_cost());
+            printf("Split calculation failure: %d\n", split_failure_itr);
+            printf("Split calculation iteration: %d\n", split_itr);
+            printf("Split calculation ANN prediction time: %lf\n", split_pre_time);
+            printf("Split calculation solve time: %lf\n", split_time);
+        }
+    }
+#endif
 
 
     if (fsa != NULL) {
@@ -458,6 +462,11 @@ int main(int argc, char **argv)
     flash_calculation_flash_model_free(&fm);
     flash_calculation_component_free(&comp_list);
 
+    time = flash_calculation_get_time(NULL) - time;
+
+    if (myrank == 0) {
+        printf("\nTOTAL COMPUTATIONAL TIME: %lf SECS.\n", time);
+    }
     //MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Finalize();
