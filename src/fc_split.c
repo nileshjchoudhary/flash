@@ -410,7 +410,7 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
         if (error < tol)
             break;
         
-        if (error > 1e-5) {
+        if (error > 1e-15) {
             flash_calculation_SS_method_update_K(phase_L->fug, phase_V->fug, K0, ncomp);
 		}
         else {
@@ -878,9 +878,11 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                             K00[k] = K[k];
                         }
                     }
+#if 0
                     for(k = 0; k < ncomp; k++) {
                         K00[k] = K0[k];
                     }
+#endif
                 }
                 else {
                     int flag = 0;
