@@ -24,8 +24,7 @@ typedef struct FLASH_STAB_ANN_ {
 } FLASH_STAB_ANN;
 
 typedef struct FLASH_SPLIT_ANN_ {
-    FLASH_ANN *ann_F;
-    FLASH_ANN **ann_K;
+    FLASH_ANN *ann;
 
     int nK;
 
@@ -40,7 +39,8 @@ FLASH_TENSOR * flash_calculation_tensor_add(FLASH_TENSOR *ft1, FLASH_TENSOR *ft2
         FLASH_TENSOR *result);
 FLASH_ANN * flash_calculation_ann_model_new(char *file_head, int level);
 void flash_calculation_ann_model_free(FLASH_ANN **ann);
-double flash_calculation_predict_value_with_ANN(FLASH_ANN *ann, 
+double *
+flash_calculation_predict_value_with_ANN(FLASH_ANN *ann, 
         FLASH_TENSOR *input);
 FLASH_SPLIT_ANN * flash_calculation_split_ann_model_new(char *file_head, int level, 
         int ncomp);
