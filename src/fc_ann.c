@@ -229,11 +229,11 @@ void flash_calculation_ann_model_free(FLASH_ANN **ann)
     free(*ann);
 }
 
-double flash_calculation_predict_value_with_ANN(FLASH_ANN *ann, 
+double * flash_calculation_predict_value_with_ANN(FLASH_ANN *ann, 
         FLASH_TENSOR *input)
 {
     int level = ann->level, i;
-    double value;
+    double *value;
     FLASH_TENSOR **y, *x, **W, **b; 
 
     W = ann->W;
@@ -276,7 +276,10 @@ double flash_calculation_predict_value_with_ANN(FLASH_ANN *ann,
     flash_calculation_tensor_dump(y[level - 1]);
 #endif
 
-    value = y[level - 1]->value[0];
+    value = malloc(y[level - 1]->nr * y[level - 1]->nc * sizeof(double));
+    for (i = 0; i < y[level - 1]->nr * y[level - 1]->nc; i++) {
+        value[i] = y[level - 1]->value[i];
+    }
     //printf("value: %e\n", value);
 
     for (i = 0; i < level; i++) {
@@ -291,24 +294,15 @@ FLASH_SPLIT_ANN * flash_calculation_split_ann_model_new(char *file_head, int lev
         int ncomp)
 {
     char file[1024];
-    int i;
     FLASH_SPLIT_ANN *fsa;
 
     printf("    Creating ANN ...\n");
     fsa = malloc(sizeof(*fsa));
     fsa->nK = ncomp;
-    fsa->ann_K = malloc(ncomp * sizeof(*(fsa->ann_K)));
 
-    sprintf(file, "%s-Fv", file_head);
+    sprintf(file, "%s", file_head);
     printf("file: %s\n", file);
-    fsa->ann_F = flash_calculation_ann_model_new(file, level);
-
-    for (i = 0; i < ncomp; i++) {
-        sprintf(file, "%s-K%d", file_head, i);
-        printf("file: %s\n", file);
-
-        fsa->ann_K[i] = flash_calculation_ann_model_new(file, level);
-    }
+    fsa->ann = flash_calculation_ann_model_new(file, level);
 
     printf("    Done\n");
 
@@ -346,10 +340,11 @@ int flash_calculation_split_ann_predict(FLASH_SPLIT_ANN *fsa, double *input,
     int i;
     FLASH_TENSOR *ft;
     double pred_time;
+    double *value;
 
     pred_time = flash_calculation_get_time(NULL);
 
-    if (fsa->ann_F == NULL) { 
+    if (fsa->ann == NULL) { 
         pred_time = flash_calculation_get_time(NULL) - pred_time;
         split_pred_time += pred_time;
 
@@ -365,11 +360,14 @@ int flash_calculation_split_ann_predict(FLASH_SPLIT_ANN *fsa, double *input,
         ft->value[i] = input[i];
     }
 
-    *F = flash_calculation_predict_value_with_ANN(fsa->ann_F, ft);
+    value = flash_calculation_predict_value_with_ANN(fsa->ann, ft);
 
+    *F = value[0];
     for (i = 0; i < fsa->nK; i++) {
-        K[i] = flash_calculation_predict_value_with_ANN(fsa->ann_K[i], ft);
+        K[i] = value[i + 1];
     }
+
+    free(value);
 
     flash_calculation_tensor_free(&ft);
 
@@ -398,16 +396,16 @@ int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
 
     ft = malloc(sizeof(*ft));
     ft->nr = 1;
-    ft->nc = n;
-    ft->value = malloc(n * sizeof(*(ft->value)));
+    ft->nc = n - 1;
+    ft->value = malloc((n - 1) * sizeof(*(ft->value)));
 
     for (i = 0; i < n - 1; i++) {
         ft->value[i] = input[i];
     }
     P = input[n - 1];
 
-    Pu = flash_calculation_predict_value_with_ANN(fsa->ann_upper, ft);
-    Pd = flash_calculation_predict_value_with_ANN(fsa->ann_down, ft);
+    Pu = * flash_calculation_predict_value_with_ANN(fsa->ann_upper, ft);
+    Pd = * flash_calculation_predict_value_with_ANN(fsa->ann_down, ft);
 
     flash_calculation_tensor_free(&ft);
 
@@ -432,19 +430,11 @@ int flash_calculation_stab_ann_predict(FLASH_STAB_ANN *fsa, double *input,
 
 void flash_calculation_split_ann_model_free(FLASH_SPLIT_ANN **fsa)
 {
-    int i;
     FLASH_SPLIT_ANN *fsa0 = *fsa;
 
-    if (fsa0 != NULL && fsa0->ann_F !=NULL ) {
-        flash_calculation_ann_model_free(&(fsa0->ann_F));
+    if (fsa0 != NULL && fsa0->ann !=NULL ) {
+        flash_calculation_ann_model_free(&(fsa0->ann));
     }
-
-    for (i = 0; i < fsa0->nK; i++) { 
-        if (fsa0->ann_K[i] != NULL && fsa0->ann_K[i] != NULL) {
-            flash_calculation_ann_model_free(&(fsa0->ann_K[i]));
-        }
-    }
-    free(fsa0->ann_K);
 
     free(*fsa);
 }

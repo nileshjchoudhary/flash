@@ -1,0 +1,10 @@
+type        stability_PM
+prop_file   spe3-prop.csv
+bin_file    spe3-bin.csv
+z_file      spe3-z.csv
+T           366.483
+P_min       100.0
+P_max       500.0
+dP          5.0
+dxx         0.02
+output      spe3-stab-PM-test

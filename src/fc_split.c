@@ -502,7 +502,7 @@ void flash_calculation_output_split_calculation_map(SPLIT_MAP *sm,
     }
     fprintf(fp, "Temperature,Pressure,Fv");
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, ",K_%d", j);
+        fprintf(fp, ",K_%d", j + 1);
     }
     fprintf(fp, "\n");
 
@@ -513,19 +513,19 @@ void flash_calculation_output_split_calculation_map(SPLIT_MAP *sm,
 
         if (comp_X != NULL) {
             for (j = 0; j < ncomp; j++) {
-                fprintf(fp, "%lf,", comp_X[j]);
+                fprintf(fp, "%e,", comp_X[j]);
             }
         }
         else {
             for (j = 0; j < ncomp; j++) {
-                fprintf(fp, "%lf,", sm->x[i][j]);
+                fprintf(fp, "%e,", sm->x[i][j]);
             }
         }
 
-        fprintf(fp, "%lf,%lf,%lf", sm->temp[i], sm->pres[i], sm->F[i]);
+        fprintf(fp, "%e,%e,%e", sm->temp[i], sm->pres[i], sm->F[i]);
 
         for (j = 0; j < ncomp; j++) {
-            fprintf(fp, ",%lf", sm->K[i][j]);
+            fprintf(fp, ",%e", sm->K[i][j]);
         }
         fprintf(fp, "\n");
     }
@@ -547,7 +547,7 @@ void flash_calculation_output_split_calculation_map_PM(SPLIT_PM_MAP *sm,
     }
     fprintf(fp, "Pressure,Fv");
     for (j = 0; j < ncomp; j++) {
-        fprintf(fp, ",K_%d", j);
+        fprintf(fp, ",K_%d", j + 1);
     }
     fprintf(fp, "\n");
 
@@ -558,19 +558,19 @@ void flash_calculation_output_split_calculation_map_PM(SPLIT_PM_MAP *sm,
 
         if (comp_X != NULL) {
             for (j = 0; j < ncomp; j++) {
-                fprintf(fp, "%lf,", comp_X[j]);
+                fprintf(fp, "%e,", comp_X[j]);
             }
         }
         else {
             for (j = 0; j < ncomp; j++) {
-                fprintf(fp, "%lf,", sm->x[i][j]);
+                fprintf(fp, "%e,", sm->x[i][j]);
             }
         }
 
-        fprintf(fp, "%lf,%lf", sm->pres[i], sm->F[i]);
+        fprintf(fp, "%e,%e", sm->pres[i], sm->F[i]);
 
         for (j = 0; j < ncomp; j++) {
-            fprintf(fp, ",%lf", sm->K[i][j]);
+            fprintf(fp, ",%e", sm->K[i][j]);
         }
         fprintf(fp, "\n");
     }
@@ -665,7 +665,7 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
                 }
                 else {
                     int flag = 0;
-                    double input[ncomp + 2], K000[ncomp];
+                    double input[ncomp + 2];
 
                     for (k = 0; k < ncomp; k++) {
                         input[k] = comp_X[k];
@@ -686,7 +686,10 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
 
 
                     if (!flag) {
-                        Fv0 = -1.0;
+                        Fv0 = 0.5;
+                        for (k = 0; k < ncomp; k++) {
+                            K00[k] = K0[k];
+                        }
                     }
                     else {
                         if (Fv0 > 1.0) {
@@ -701,13 +704,11 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
                         printf("Fv0: %e\n", Fv0);
                         printf("K: ");
 #endif
-                        flash_calculation_estimate_K(eos, K000);
-
                         for (k = 0; k < ncomp; k++) {
                             //printf("%e ", K00[k]);
 
                             if (K00[k] < 0.0 || fabs(log(K00[k])) < 1e-4) {
-                                K00[k] = K000[k];
+                                K00[k] = K0[k];
                             }
                         }
                         //printf("\n");
@@ -886,7 +887,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                 }
                 else {
                     int flag = 0;
-                    double input[ncomp + 1], K000[ncomp];
+                    double input[ncomp + 1];
 
                     for (k = 0; k < ncomp; k++) {
                         input[k] = x[k];
@@ -898,15 +899,18 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 
 
                     if (!flag) {
-                        Fv0 = -1.0;
+                        Fv0 = 0.5;
+                        for (k = 0; k < ncomp; k++) {
+                            K00[k] = K0[k];
+                        }
                     }
                     else {
                         if (Fv0 > 1.0) {
-                            Fv0 = 0.9;
+                            Fv0 = 0.99;
                         }
 
                         if (Fv0 < 0.0) {
-                            Fv0 = 0.1;
+                            Fv0 = 0.01;
                         }
 
                         if (verb) {
@@ -914,15 +918,13 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
                             printf("K: ");
                         }
 
-                        flash_calculation_estimate_K(eos, K000);
-
                         for (k = 0; k < ncomp; k++) {
                             if (verb) {
                                 printf("%e ", K00[k]);
                             }
 
                             if (K00[k] < 0.0 || fabs(log(K00[k])) < 1e-4) {
-                                K00[k] = K000[k];
+                                K00[k] = K0[k];
                             }
                         }
 

@@ -1,0 +1,14 @@
+type        envelope_data
+prop_file   spe3-prop.dat
+bin_file    spe3-bin.dat
+z_file      spe3-z.dat
+T_min       350.0
+T_max       900.0
+P_min       10.0
+P_max       500.0
+mole        100
+mole_range  50 96  1 30  1 20  1 10  1 8
+mole_d         10     6     5     3    3
+dP          2
+dT          2
+output      spe3-5comp-diagram

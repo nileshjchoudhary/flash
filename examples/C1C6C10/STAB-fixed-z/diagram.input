@@ -1,0 +1,14 @@
+type        envelope_data
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T_min       200.0
+T_max       700.0
+dT          2.0
+P_min       20.0
+P_max       300.0
+dP          0.5
+mole        100
+mole_range    2 2   3  3   95 95
+mole_d          1      1     1
+output      C1C6C10-diagram-fixed-z-for-plot

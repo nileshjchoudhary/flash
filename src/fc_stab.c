@@ -749,7 +749,7 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
                     input[k] = comp_X[k];
                 }
                 input[ncomp] = temp_list[j];
-                input[ncomp + 1] = pres_list[j];
+                input[ncomp + 1] = pres_list[i];
 
                 flag = flash_calculation_stab_ann_predict(fsa, input, n, &status);
             }
@@ -805,8 +805,9 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
 }
 
 STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *comp_list, 
-        double *comp_X, double T, double P_min, double P_max, double dP, int selected_component, 
-        double dxx, FLASH_STAB_ANN *fsa, char *output_name)
+        double *comp_X, double T, double P_min, double P_max, double dP, 
+        int selected_component, double *comp_range, double dxx, FLASH_STAB_ANN *fsa, 
+        char *output_name)
 {
     int n_pres, n_x, i, j, k, ncomp = comp_list->ncomp;
     double *pres_list, *x_list, *x, sum_no_selected;
@@ -814,6 +815,7 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
     PHASE *phase;
     STABILITY_PM_MAP *sm;
     int status;
+    double comp_min, comp_max;
 
     x = malloc(ncomp * sizeof(*x));
     n_pres = (int)((P_max - P_min) / dP);
@@ -822,12 +824,21 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
         pres_list[i] = P_min + i * dP;
     }
 
-    n_x = (int)((1.0 - 0.001) / dxx) + 1;
-    x_list = malloc(n_x * sizeof(*x_list));
-    for (i = 0; i < n_x - 1; i++) {
-        x_list[i] = 0.001 + i * dxx;
+    if (comp_range == NULL) {
+        comp_min = 0.001;
+        comp_max = 1.0;
     }
-    x_list[n_x - 1] = 0.999;
+    else {
+        comp_min = comp_range[0];
+        comp_max = comp_range[1];
+    }
+
+    n_x = (int)((comp_max - comp_min) / dxx) + 1;
+    dxx = (comp_max - comp_min) / n_x;
+    x_list = malloc(n_x * sizeof(*x_list));
+    for (i = 0; i < n_x; i++) {
+        x_list[i] = comp_min + i * dxx;
+    }
 
     sm = malloc(sizeof(*sm));
     sm->n_unstable = 0;

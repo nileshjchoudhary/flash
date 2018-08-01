@@ -1,0 +1,17 @@
+type        stability_PM_data
+stab_ann    3-comp-stab-pm
+stab_ann_level 2
+stab_ann_delta_p 1.0
+stab_ann_safeguard 1.0
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T           500.0
+P_min       10.0
+P_max       250.0
+dP          3.33
+mole        100
+mole_range  1  98    1 98   1 98
+mole_d          1       9      9
+dxx         0.0133
+output      C1C6C10-stability-ann

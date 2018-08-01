@@ -53,7 +53,7 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
         double dT, double dP, FLASH_STAB_ANN *fsa, char *output_name);
 STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *comp_list, 
         double *comp_X, double T, double P_min, double P_max, double dP, int selected_component, 
-        double dxx, FLASH_STAB_ANN *fsa, char *output_name);
+        double *comp_range, double dxx, FLASH_STAB_ANN *fsa, char *output_name);
 void flash_calculation_stability_map_free(STABILITY_MAP **sm);
 void flash_calculation_stability_PM_map_free(STABILITY_PM_MAP **sm);
 

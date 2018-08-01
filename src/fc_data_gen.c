@@ -578,7 +578,7 @@ void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list,
 
 void flash_calculation_generate_stability_analysis_PM_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T, double P_min, double P_max, double dP, 
-        double dxx, FLASH_STAB_ANN *fsa, char *output)
+        double *comp_range, double dxx, FLASH_STAB_ANN *fsa, char *output)
 {
     int i, j, k, ncomp = comp_list->ncomp;
     STABILITY_PM_MAP *sm0, *sm;
@@ -616,7 +616,7 @@ void flash_calculation_generate_stability_analysis_PM_data(COMP_LIST *comp_list,
         printf("\n");
 
         sm0 = flash_calculation_draw_stability_analysis_map_PM(comp_list, x, 
-                T, P_min, P_max, dP, 0, dxx, fsa, output);
+                T, P_min, P_max, dP, 0, comp_range, dxx, fsa, output);
 
         sm->unstable_pres = realloc(sm->unstable_pres,
                 (sm->n_unstable + sm0->n_unstable) * sizeof(*(sm->unstable_pres)));

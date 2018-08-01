@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
         sm = flash_calculation_draw_stability_analysis_map_PM(comp_list, x, 
                 fm->T, fm->P_min, fm->P_max, fm->dP, fm->selected_component, 
-                fm->dxx, fsta, fm->output);
+                NULL, fm->dxx, fsta, fm->output);
 
         flash_calculation_stability_PM_map_free(&sm);
     }
@@ -108,12 +108,21 @@ int main(int argc, char **argv)
 
     if (strcmp(fm->type, "stability_PM_data") == 0) {
         int nx, nx_rank;
-        double **x_list, **x_list_rank;
+        double **x_list, **x_list_rank, comp_range[2];
         char output_rank[100];
 
         nx = flash_calculation_generate_x_new_2(fm->mole, 
                 fm->mole_range, fm->mole_d,
                 comp_list->ncomp, &x_list);
+
+        if (fm->mole_range == NULL) {
+            comp_range[0] = 1.0 / fm->mole;
+            comp_range[1] = 1.0;
+        }
+        else {
+            comp_range[0] = (double)fm->mole_range[0] / fm->mole;
+            comp_range[1] = (double)fm->mole_range[1] / fm->mole;
+        }
 
         nx_rank = nx / nprocs;
         if (myrank < nx - nx_rank * nprocs) {
@@ -136,9 +145,9 @@ int main(int argc, char **argv)
             sprintf(output_rank, "%s-rank-%04d", fm->output, myrank);
         }
 
-        flash_calculation_generate_stability_analysis_PM_data(comp_list, nx_rank, 
-                x_list_rank, fm->T, fm->P_min, fm->P_max, fm->dP, 
-                fm->dxx, fsta, output_rank);
+        flash_calculation_generate_stability_analysis_PM_data(comp_list, 
+                nx_rank, x_list_rank, fm->T, fm->P_min, fm->P_max, fm->dP, 
+                comp_range, fm->dxx, fsta, output_rank);
 
         for (i = 0; i < nx; i++) {
             free(x_list[i]);

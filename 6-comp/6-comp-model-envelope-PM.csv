@@ -1,9 +1,0 @@
-type        envelope_PM
-prop_file   6-comp-prop.csv
-bin_file    6-comp-bin.csv
-z_file      6-comp-z2.csv
-dP          0.1
-T           380.0
-dxx         0.01
-selected_component 0
-output      6-comp-data

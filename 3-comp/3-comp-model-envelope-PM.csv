@@ -1,9 +1,0 @@
-type        envelope_PM
-prop_file   3-comp-prop.csv
-bin_file    3-comp-bin.csv
-z_file      3-comp-z.csv
-dP          0.1
-T           280.0
-dxx         0.002
-selected_component 0
-output      3-comp-data

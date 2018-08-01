@@ -1,0 +1,16 @@
+type        split_data
+split_ann   3-comp-all-split
+split_ann_level 2
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T_min       200.0
+T_max       630.0
+P_min       10.0
+P_max       350.0
+mole        100
+mole_range  1  98    1 98   1 98
+mole_d          9       5      5
+dP          4.33
+dT          4.33
+output      C1C6C10-split-test

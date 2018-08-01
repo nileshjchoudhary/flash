@@ -1,0 +1,14 @@
+type        stability_data
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T_min       200.0
+T_max       600.0
+P_min       10.0
+P_max       350.0
+dP          3.33
+dT          3.33
+mole        100
+mole_range  1  98    1 98   1 98
+mole_d          9       5      5
+output      C1C6C10-stability

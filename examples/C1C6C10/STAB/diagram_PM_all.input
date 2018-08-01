@@ -1,0 +1,13 @@
+type        envelope_PM_data
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T           500.0
+P_min       10.0
+P_max       300.0
+dP          2.0
+mole        100
+mole_range  1  98    1 98   1 98
+mole_d          1      30     10
+dxx         0.02
+output      C1C6C10-diagram-PM

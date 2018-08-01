@@ -133,10 +133,10 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
             fm->stab_ann_level = atoi(csv_value[i]->value[1]);
         }
         else if (strcmp(name, "stab_ann_safeguard") == 0) {
-            fm->stab_ann_safeguard = atoi(csv_value[i]->value[1]);
+            fm->stab_ann_safeguard = atof(csv_value[i]->value[1]);
         }
         else if (strcmp(name, "stab_ann_delta_p") == 0) {
-            fm->stab_ann_delta_p = atoi(csv_value[i]->value[1]);
+            fm->stab_ann_delta_p = atof(csv_value[i]->value[1]);
         }
         else if (strcmp(name, "output") == 0) {
             strcpy(fm->output, csv_value[i]->value[1]);

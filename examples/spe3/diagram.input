@@ -1,0 +1,11 @@
+type        diagram
+prop_file   spe3-prop.csv
+bin_file    spe3-bin.csv
+z_file      spe3-z.csv
+T_min       300.0
+T_max       600.0
+P_min       100.0
+P_max       500.0
+dP          1.0
+dT          1.0
+output      spe3-diagram

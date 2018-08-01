@@ -1,0 +1,18 @@
+type        stability_data
+stab_ann    spe3-5comp-all-stab
+stab_ann_level 0
+stab_ann_delta_p 1.0
+stab_ann_safeguard 4.0
+prop_file   spe3-prop.dat
+bin_file    spe3-bin.dat
+z_file      spe3-z.dat
+T_min       380.0
+T_max       870.0
+P_min       10.0
+P_max       500.0
+mole        100
+mole_range  50 96  1 30  1 20  1 10  1 8
+mole_d          7     4     3     2    2
+dP          3.33
+dT          3.33
+output      spe3-5comp-stability
