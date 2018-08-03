@@ -15,6 +15,7 @@ typedef struct PHASE_ENVELOPE_PM_ {
 
 } PHASE_ENVELOPE_PM;
 
+
 double flash_calculation_phase_diagram_construction_calculate_equations(PHASE *phase_L, PHASE *phase_V, 
 	double *K, double *z, double F_v, double *G);
 void flash_calculation_phase_diagram_construction_calculate_equations_derivative(PHASE *phase_L, PHASE *phase_V, 

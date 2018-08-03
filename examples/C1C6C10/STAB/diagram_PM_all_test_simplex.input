@@ -1,0 +1,10 @@
+type        envelope_PM_data_simplex
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T           500.0
+P_min       10.0
+P_max       300.0
+dP          2.0
+dxx         0.02
+output      C1C6C10-diagram-PM-simplex

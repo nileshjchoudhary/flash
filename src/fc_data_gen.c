@@ -537,6 +537,7 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
     return sum;
 }
 
+
 void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list, 
         int nx, double **x_list, double T_min, double T_max, double P_min, 
         double P_max, double dT, double dP, FLASH_STAB_ANN *fsa, char *output)
@@ -550,7 +551,8 @@ void flash_calculation_generate_stability_analysis_data(COMP_LIST *comp_list,
     printf("   -- Generating stability analysis data:\n");
 
     for (i = 0; i < nx; i++) {
-        for (j = 0; j < ncomp; j++) { x[j] = x_list[i][j];
+        for (j = 0; j < ncomp; j++) { 
+            x[j] = x_list[i][j];
         }
 
         printf("      -- Data Set %d / %d\n", i, nx);
@@ -1098,8 +1100,8 @@ void flash_calculation_generate_phase_envelope_data(COMP_LIST *comp_list,
 }
 
 void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list, 
-        int nx, double **x_list, double T, double dP, double *comp_range, double dxx, double P_max, 
-        char *output)
+        int nx, double **x_list, double T, double dP, double *comp_range, 
+        double dxx, double P_max, char *output)
 {
     int i, j, k, ncomp = comp_list->ncomp;
     PHASE_ENVELOPE_PM *pe_pm0, *pe_pm;
@@ -1190,5 +1192,101 @@ void flash_calculation_generate_phase_envelope_PM_data(COMP_LIST *comp_list,
 
     free(x);
 }
+
+
+#if 0
+void flash_calculation_generate_phase_envelope_PM_data_simplex(COMP_LIST *comp_list, 
+        int nx, double **x_list, double T, double P_max, double P_min, char *output)
+{
+    int i, j, k, ncomp = comp_list->ncomp;
+    PHASE_ENVELOPE_PM *pe_pm0, *pe_pm;
+    double *x;
+    double max_P = 0.0, min_P = 1e10, max_P0, min_P0;
+    char file_scaled[100];
+    int myrank;
+
+    x = malloc(ncomp * sizeof(*x));
+
+    pe_pm = malloc(sizeof(*pe_pm));
+    pe_pm->n = 0;
+    pe_pm->Ps = malloc(sizeof(*(pe_pm->Ps)));
+    pe_pm->xs = malloc(sizeof(*(pe_pm->xs)));
+
+    printf("   -- Generating phase envelope data:\n");
+
+    for (i = 0; i < nx; i++) {
+        for (j = 0; j < ncomp; j++) {
+            x[j] = x_list[i][j];
+        }
+
+        printf("      -- Data Set %d / %d\n", i, nx);
+        printf("      --    x:");
+        for (j = 0; j < ncomp; j++) {
+            printf("%lf ", x[j]);
+        }
+        printf("\n");
+
+        //for (j = 0; j < ncomp; j++) {
+        pe_pm0 = flash_calculation_phase_saturation_envelope_construction_PM(comp_list, 
+                x, T, 200.0, dP, 0, comp_range, dxx, P_max, output);
+
+        pe_pm->Ps = realloc(pe_pm->Ps, 
+                (pe_pm->n + pe_pm0->n) * sizeof(*(pe_pm->Ps)));
+        pe_pm->xs = realloc(pe_pm->xs, 
+                (pe_pm->n + pe_pm0->n) * sizeof(*(pe_pm->xs)));
+
+        for (j = pe_pm->n; j < pe_pm->n + pe_pm0->n; j++) {
+            pe_pm->Ps[j] = pe_pm0->Ps[j - pe_pm->n];
+            pe_pm->xs[j] = malloc(ncomp * sizeof(*(pe_pm->xs[j])));
+            for (k = 0; k < ncomp; k++) {
+                pe_pm->xs[j][k] = pe_pm0->xs[j - pe_pm->n][k];
+            }
+
+            if (max_P < pe_pm->Ps[j]) {
+                max_P = pe_pm->Ps[j];
+            }
+            if (min_P > pe_pm->Ps[j]) {
+                min_P = pe_pm->Ps[j];
+            }
+        }
+        pe_pm->n += pe_pm0->n;
+
+        flash_calculation_phase_envelope_pm_free(&pe_pm0);
+        //}
+
+        printf("      --    X:");
+        for (j = 0; j < ncomp; j++) {
+            printf("%lf ", x[j]);
+        }
+        printf("      --    Done\n");
+    }
+    printf("   -- Done\n");
+
+    MPI_Allreduce(&max_P, &max_P0, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&min_P, &min_P0, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if (myrank == 0) {
+        printf("Minimal Pressure: %e, Maximal Pressure: %e\n", 
+                min_P0, max_P0);
+    }
+
+    for (i = 0; i < pe_pm->n; i++) {
+        pe_pm->Ps[i] = (pe_pm->Ps[i] - min_P0) / (max_P0 - min_P0);
+    }
+
+    sprintf(file_scaled, "%s-scaled", output);
+    flash_calculation_phase_envelope_PM_output(pe_pm, ncomp, 0, file_scaled);
+
+    free(pe_pm->Ps);
+    for (i = 0; i < pe_pm->n; i++) {
+        free(pe_pm->xs[i]);
+    }
+    free(pe_pm->xs);
+    free(pe_pm);
+
+    free(x);
+}
+#endif
 
 

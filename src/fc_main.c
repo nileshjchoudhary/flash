@@ -346,6 +346,46 @@ int main(int argc, char **argv)
         free(x_list_rank);
     }
 
+    if (strcmp(fm->type, "envelope_data_simplex") == 0) {
+        int nx, nx_rank;
+        double **x_list, **x_list_rank;
+        char output_rank[100];
+
+        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.25,
+                comp_list->ncomp, &x_list);
+
+        nx_rank = nx / nprocs;
+        if (myrank < nx - nx_rank * nprocs) {
+            nx_rank++;
+        }
+
+        x_list_rank = malloc(nx_rank * sizeof(*x_list_rank));
+        j = 0;
+        for (i = 0; i < nx; i++) {
+            if (i % nprocs == myrank) {
+                x_list_rank[j] = x_list[i];
+                j++;
+            }
+        }
+
+        if (nprocs == 1) {
+            sprintf(output_rank, "%s", fm->output);
+        }
+        else {
+            sprintf(output_rank, "%s-rank-%03d", fm->output, myrank);
+        }
+
+        flash_calculation_generate_phase_envelope_data(comp_list, 
+                nx_rank, x_list_rank, fm->T_min, fm->T_max, fm->P_min, 
+                fm->P_max, fm->dT, fm->dP, output_rank);
+
+        for (i = 0; i < nx; i++) {
+            free(x_list[i]);
+        }
+        free(x_list);
+        free(x_list_rank);
+    }
+
     if (strcmp(fm->type, "envelope_PM_data") == 0) {
         int nx, nx_rank;
         double **x_list, **x_list_rank, comp_range[2];
@@ -394,6 +434,24 @@ int main(int argc, char **argv)
         }
         free(x_list);
         free(x_list_rank);
+    }
+
+    if (strcmp(fm->type, "envelope_PM_data_simplex") == 0) {
+        int nx, nx_rank;
+        double **x_list, **x_list_rank, comp_range[2];
+        char output_rank[100];
+        SET_NO_LIST *set_no_list;
+        PS_SIMPLEX_ISOTHERM *ps_simplex;
+
+        set_no_list = flash_calculation_generate_simplex_set_no(0.0, 
+                1.0, 0.25, comp_list->ncomp);
+        flash_calculation_generate_simplex_set_no_print(set_no_list);
+
+        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.25,
+                comp_list->ncomp, &x_list);
+
+        ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
+                x_list, nx, set_no_list, fm->T, 100.0, 1.0, fm->dP, fm->P_max);
     }
 
     {

@@ -24,3 +24,4 @@
 #include "fc_diagram.h"
 #include "fc_model.h"
 #include "fc_data_gen.h"
+#include "fc_ps_simplex.h"
