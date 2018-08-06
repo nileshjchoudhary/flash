@@ -29,7 +29,7 @@ typedef struct STABILITY_PM_MAP_ {
 
 } STABILITY_PM_MAP;
 
-double * flash_calculation_estimate_K(EOS *eos, double *K);
+double * flash_calculation_estimate_K(EOS *eos, double *z, double *K);
 double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase);
 void flash_calculation_calculate_trial_phase_composition(double *X_t, double *x, int ncomp);
 void flash_calculation_SS_method_update_X(PHASE *phase, PHASE *phase_t, double *X_t);

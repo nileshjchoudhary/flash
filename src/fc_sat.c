@@ -215,7 +215,12 @@ void flash_calculation_saturation_calculation_calculate_X(double *K, double *z, 
 	int i;
 
     for (i = 0; i < ncomp; i++) {
-        X[i] = z[i] * K[i];
+        if (z[i] < 1e-10) {
+            X[i] = 0.0;
+        }
+        else {
+            X[i] = z[i] * K[i];
+        }
 	}
 }
 
@@ -230,7 +235,12 @@ void flash_calculation_aturation_calculation_calculate_X_derivative(double *z, d
 	int i;
 
     for (i = 0; i < ncomp; i++) {
-        dX_dK[i] = z[i];
+        if (z[i] < 1e-10) {
+            dX_dK[i] = 0.0;
+        }
+        else {
+            dX_dK[i] = z[i];
+        }
 	}
 }
 
@@ -240,18 +250,26 @@ void flash_calculation_aturation_calculation_calculate_X_derivative(double *z, d
 # $$
 */
 
-void flash_calculation_saturation_calculation_calculate_fugacity_ratio(PHASE *phase, PHASE *phase_t, 
-	double *Y, double *Ri)
+void flash_calculation_saturation_calculation_calculate_fugacity_ratio(PHASE *phase, 
+        PHASE *phase_t, double *Y, double *Ri)
 {
 	int i, ncomp = phase->ncomp;
 	double sum_Y = 0.0;
     
     for (i = 0; i < ncomp; i++) {
+        if (Y[i] < 1e-10) 
+            continue;
+
         sum_Y += Y[i];
 	}
     
     for (i = 0; i < ncomp; i++) {
-        Ri[i] = phase->fug[i] / phase_t->fug[i] / sum_Y;
+        if (Y[i] < 1e-10) {
+            Ri[i] = 0.0;
+        }
+        else {
+            Ri[i] = phase->fug[i] / phase_t->fug[i] / sum_Y;
+        }
 	}
 }
 
@@ -265,7 +283,12 @@ void flash_calculation_saturation_calculation_update_X_with_fugacity_ratio(doubl
 	int i;
     
     for (i = 0; i < ncomp; i++) {
-        Y[i] = Y[i] * Ri[i];
+        if (Y[i] < 1e-10) {
+            Y[i] = 0.0;
+        }
+        else {
+            Y[i] = Y[i] * Ri[i];
+        }
 	}
 }
 
@@ -285,6 +308,9 @@ double flash_calculation_saturation_calculation_calculate_Q_value(double *Y, int
     double sum_Y = 0.0;
     
     for (i = 0; i < ncomp; i++) {
+        if (Y[i] < 1e-10) 
+            continue;
+
         sum_Y += Y[i];
 	}
     
@@ -307,7 +333,11 @@ double flash_calculation_saturation_calculation_calculate_Q_derivative(PHASE *ph
     double dQ = 0.0;
     
     for (i = 0; i < ncomp; i++) {
-        dQ += Y[i] * Ri[i] * (phase_t->dfug[i] / phase_t->fug[i] - phase->dfug[i] / phase->fug[i]);
+        if (Y[i] < 1e-10) 
+            continue;
+
+        dQ += Y[i] * Ri[i] * (phase_t->dfug[i] / phase_t->fug[i] 
+                - phase->dfug[i] / phase->fug[i]);
 	}
 
     return dQ;

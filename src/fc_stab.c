@@ -12,7 +12,7 @@ static double stab_solve_time = 0.;
 # $$
 */
 
-double * flash_calculation_estimate_K(EOS *eos, double *K)
+double * flash_calculation_estimate_K(EOS *eos, double *z, double *K)
 {
     int i, ncomp = eos->ncomp;
     double P, T;
@@ -27,8 +27,14 @@ double * flash_calculation_estimate_K(EOS *eos, double *K)
     comp = eos->comp_list->comp;
 
     for (i = 0; i < ncomp; i++) {
-        K[i] = comp[i].PC / P 
-            * exp(5.37 * (1.0 + comp[i].AC) * (1.0 - comp[i].TC / T));
+        if (z[i] < 1e-10) {
+            K[i] = 0.0;
+        }
+        else {
+            K[i] = comp[i].PC / P 
+                * exp(5.37 * (1.0 + comp[i].AC) 
+                        * (1.0 - comp[i].TC / T));
+        }
     }
 
     return K;
@@ -56,7 +62,7 @@ double * flash_calculation_estimate_K(EOS *eos, double *K)
 
 double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
 {
-    int ncomp = phase->ncomp, n_guess, i, j;
+    int ncomp = phase->ncomp, n_guess, i;
     double *K, Xi, *est;
     EOS *eos = phase->eos;
 
@@ -64,7 +70,7 @@ double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
     n_guess = 0;
 
     K = malloc(ncomp * sizeof(*K));
-    flash_calculation_estimate_K(eos, K);
+    flash_calculation_estimate_K(eos, phase->mf, K);
 
     /* Wilson correlation */
     for (i = 0; i < ncomp; i++) {
@@ -95,6 +101,7 @@ double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
     n_guess += 1;
 
     /* A pure phase */
+#if 0
     for (i = 0; i < ncomp; i++) {
         for (j = 0; j < ncomp; j++) {
             if (i == j) {
@@ -107,6 +114,7 @@ double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
         }
         n_guess += 1;
     }
+#endif
 
 
     /* A hypothetical idea gas: TODO */
@@ -127,11 +135,19 @@ void flash_calculation_calculate_trial_phase_composition(double *X_t, double *x,
     int i;
 
     for (i = 0; i < ncomp; i++) {
+        if (X_t[i] < 1e-10) 
+            continue;
+
         Xs += X_t[i];
     }
 
     for (i = 0; i < ncomp; i++) {
-        x[i] = X_t[i] / Xs;
+        if (X_t[i] < 1e-10) {
+            x[i] = 0.0;
+        }
+        else {
+            x[i] = X_t[i] / Xs;
+        }
     }
 }
 
@@ -141,12 +157,19 @@ void flash_calculation_calculate_trial_phase_composition(double *X_t, double *x,
 # $$
 */
 
-void flash_calculation_SS_method_update_X(PHASE *phase, PHASE *phase_t, double *X_t)
+void flash_calculation_SS_method_update_X(PHASE *phase, 
+        PHASE *phase_t, double *X_t)
 {
     int ncomp = phase->ncomp, i;
 
     for (i = 0; i < ncomp; i++) {
-        X_t[i] = exp(log(phase->mf[i]) + log(phase->phi[i]) - log(phase_t->phi[i]));
+        if (phase->mf[i] < 1e-10) {
+            X_t[i] = 0.0;
+        }
+        else {
+            X_t[i] = exp(log(phase->mf[i]) + log(phase->phi[i]) 
+                    - log(phase_t->phi[i]));
+        }
     }
 }
 
@@ -174,6 +197,9 @@ void flash_calculation_calculate_trial_phase_composition_derivative(double *X_t,
     int i, j;
 
     for (i = 0; i < ncomp; i++) {
+        if (X_t[i] < 1e-10) 
+            continue;
+
         sum_X += X_t[i];
     }
 
@@ -186,7 +212,12 @@ void flash_calculation_calculate_trial_phase_composition_derivative(double *X_t,
                 sigma = 0.0;
             }
 
-            dx_t[i * ncomp + j] = sigma / sum_X - X_t[i] / (sum_X * sum_X);
+            if (X_t[i] < 1e-10 || X_t[j] < 1e-10) {
+                dx_t[i * ncomp + j] = 0.0;
+            }
+            else {
+                dx_t[i * ncomp + j] = sigma / sum_X - X_t[i] / (sum_X * sum_X);
+            }
         }
     }
 }
@@ -203,7 +234,13 @@ void flash_calculation_calculate_stability_equilibrium_equation(PHASE *phase, PH
     int ncomp = phase->ncomp, i;
 
     for (i = 0; i < ncomp; i++) {
-        D[i] = log(X_t[i]) - log(phase->mf[i]) + log(phase_t->phi[i]) - log(phase->phi[i]);
+        if (phase->mf[i] < 1e-10) {
+            D[i] = 0.0;
+        }
+        else {
+            D[i] = log(X_t[i]) - log(phase->mf[i]) 
+                + log(phase_t->phi[i]) - log(phase->phi[i]);
+        }
     }
 }
 
@@ -220,8 +257,8 @@ void flash_calculation_calculate_stability_equilibrium_equation(PHASE *phase, PH
 # $$
 */
 
-void flash_calculation_calculate_stability_equilibrium_equation_derivative(PHASE *phase_t, double *dx_t, 
-        double *X_t, double *dD)
+void flash_calculation_calculate_stability_equilibrium_equation_derivative(PHASE *phase_t, 
+        double *dx_t, double *X_t, double *dD)
 {
     int ncomp = phase_t->ncomp, i, j, k;
     double sigma = 0.0, temp;
@@ -235,32 +272,44 @@ void flash_calculation_calculate_stability_equilibrium_equation_derivative(PHASE
                 sigma = 0.0;
             }
 
-            dD[i * ncomp + j] = 1.0 / X_t[i] * sigma;
-
-            temp = 0.0;
-            for (k = 0; k < ncomp; k++) {
-                temp += phase_t->dphi_dx[i * ncomp + k] * dx_t[k * ncomp + j];
+            if (X_t[i] < 1e-10 || X_t[j] < 1e-10) {
+                dD[i * ncomp + j] = 0.0;
             }
+            else {
+                dD[i * ncomp + j] = 1.0 / X_t[i] * sigma;
 
-            dD[i * ncomp + j] += 1.0 / phase_t->phi[i] * temp;
+                temp = 0.0;
+                for (k = 0; k < ncomp; k++) {
+                    temp += phase_t->dphi_dx[i * ncomp + k] * dx_t[k * ncomp + j];
+                }
+
+                dD[i * ncomp + j] += 1.0 / phase_t->phi[i] * temp;
+            }
         }
     }
 }
 
-double flash_calculation_calculate_stability_residual(PHASE *phase, PHASE *phase_t, double *X_t, double *res)
+double flash_calculation_calculate_stability_residual(PHASE *phase, 
+        PHASE *phase_t, double *X_t, double *res)
 {
     int ncomp = phase->ncomp, i;
     double tol = 0.0, tmp1, tmp2;
 
     for (i = 0; i < ncomp; i++) {
-        res[i] = log(X_t[i]) + log(phase_t->phi[i]) - log(phase->mf[i]) - log(phase->phi[i]);
+        if (X_t[i] < 1e-10) {
+            res[i] = 0.0;
+        }
+        else {
+            res[i] = log(X_t[i]) + log(phase_t->phi[i]) 
+                - log(phase->mf[i]) - log(phase->phi[i]);
 
-        tmp1 = res[i] * res[i];
-        tmp2 = log(phase->mf[i]) + log(phase->phi[i]);
-        tmp2 = tmp2 * tmp2;
+            tmp1 = res[i] * res[i];
+            tmp2 = log(phase->mf[i]) + log(phase->phi[i]);
+            tmp2 = tmp2 * tmp2;
 
-        if ((tmp1 / tmp2) > tol) {
-            tol = tmp1 / tmp2;
+            if ((tmp1 / tmp2) > tol) {
+                tol = tmp1 / tmp2;
+            }
         }
     }
 
@@ -283,23 +332,66 @@ double flash_calculation_calculate_stability_residual(PHASE *phase, PHASE *phase
 
 void flash_calculation_QNSS_method_update_X(double *dD, double *D, double *X_t, int ncomp)
 {
-    int i;
-    double *x;
+    int i, j;
+    int *flag, n, ni, nj;
+    double *x, *rhs, *mat;
 
-    x = malloc(ncomp * sizeof(*x));
+    flag = malloc(ncomp * sizeof(*flag));
 
+    n = 0;
     for (i = 0; i < ncomp; i++) {
-        D[i] = - D[i];
+        if (X_t[i] < 1e-10) {
+            flag[i] = 0;
+        }
+        else {
+            flag[i] = 1;
+            n++;
+        }
     }
 
-    flash_calculation_solve_dense_linear_system(dD, D, x, ncomp);
+    x = malloc(n * sizeof(*x));
+    rhs = malloc(n * sizeof(*rhs));
+    mat = malloc(n * n * sizeof(*mat));
 
+    ni = 0;
     for (i = 0; i < ncomp; i++) {
-        X_t[i] += x[i];
+        if (flag[i]) {
+            rhs[ni] = - D[i];
+            ni++;
+        }
     }
 
+    ni = 0;
+    for (i = 0; i < ncomp; i++) {
+        if (flag[i]) {
+            nj = 0;
+
+            for (j = 0; j < ncomp; j++) {
+                if (flag[j]) {
+                    mat[ni * n + nj] = dD[i * ncomp + j];
+                    nj++;
+                }
+            }
+            ni++;
+        }
+    }
+
+    flash_calculation_solve_dense_linear_system(mat, rhs, x, n);
+
+    ni = 0;
+    for (i = 0; i < ncomp; i++) {
+        if (flag[i]) {
+            X_t[i] += x[ni];
+            ni++;
+        }
+    }
+
+    free(flag);
     free(x);
+    free(rhs);
+    free(mat);
 }
+
 
 /* ### Check Stability using X
 # 1. If $\sum_i{(\log{\frac{X_i}{z_i}})^2} < \epsilon$, the solution is trivial, try next initial guess.
@@ -312,6 +404,9 @@ int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
     double sum_Y = 0.0, sum_K = 0.0;
 
     for (i = 0; i < ncomp; i++) { 
+        if (X_t[i] < 1e-10) 
+            continue;
+
         sum_Y += X_t[i];
 
         sum_K += log(X_t[i] / z[i]) * log(X_t[i] / z[i]);
@@ -445,7 +540,12 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
     /* if K is not None, we output K = X_t / z */
     if (K != NULL) {
         for (i = 0; i < ncomp; i++) {
-            K[i] = X_t[i] / phase->mf[i];
+            if (phase->mf[i] < 1e-10) {
+                K[i] = 0.0;
+            }
+            else {
+                K[i] = X_t[i] / phase->mf[i];
+            }
         }
     }
 

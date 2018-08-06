@@ -80,7 +80,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
         flash_calculation_saturation_calculation_search_Pu_Ps(eos, z, T, 50.0, 0, 1.0, 1, 0, Pu_Ps, P_max);
         eos->pres = Pu_Ps[0];
         eos->temp = T;
-        flash_calculation_estimate_K(eos, K);
+        flash_calculation_estimate_K(eos, z, K);
         itr = 0;
         while(1) {
             F = flash_calculation_calculate_RachfordRice_equation_value(K, z, Fv, ncomp);
@@ -91,7 +91,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
             dK = flash_calculation_calculate_initial_K_derivative_with_pressure(eos);
             eos->pres += - F / dK;
 
-            flash_calculation_estimate_K(eos, K);
+            flash_calculation_estimate_K(eos, z, K);
 
             itr += 1;
             if (itr > 30) {
@@ -101,7 +101,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
 
         if (eos->pres < 0.0) {
             eos->pres = Pu_Ps[0];
-            flash_calculation_estimate_K(eos, K);
+            flash_calculation_estimate_K(eos, z, K);
         }
     }
     else if (K == NULL && P_est > 0.0) {
@@ -109,7 +109,7 @@ double * flash_calculation_calculate_status_at_fixed_temperature_and_Fv(EOS *eos
 
         eos->pres = P_est;
         eos->temp = T;
-        flash_calculation_estimate_K(eos, K);
+        flash_calculation_estimate_K(eos, z, K);
     }
     else {
         eos->pres = P_est;
@@ -243,7 +243,7 @@ double * flash_calculation_calculate_status_at_fixed_pressure_and_Fv(EOS *eos, d
         flash_calculation_saturation_calculation_search_Tu_Ts(eos, z, P,  50.0, 0, 1.0, 1, 0, Tu_Ts);
         eos->pres = P;
         eos->temp = Tu_Ts[0];
-        flash_calculation_estimate_K(eos, K);
+        flash_calculation_estimate_K(eos, z, K);
         itr = 0;
 
         while(1) {
@@ -255,7 +255,7 @@ double * flash_calculation_calculate_status_at_fixed_pressure_and_Fv(EOS *eos, d
             dK = flash_calculation_calculate_initial_K_derivative_with_temperature(eos);
             eos->temp += - F / dK;
             
-            flash_calculation_estimate_K(eos, K);
+            flash_calculation_estimate_K(eos, z, K);
             
             itr += 1;
             if (itr > 30)
@@ -264,7 +264,7 @@ double * flash_calculation_calculate_status_at_fixed_pressure_and_Fv(EOS *eos, d
 
         if (eos->temp < 0.0) {
             eos->temp = Tu_Ts[0];
-            flash_calculation_estimate_K(eos, K);
+            flash_calculation_estimate_K(eos, z, K);
 		}
 	}
     else if (K == NULL && T_est > 0.0) {
@@ -272,7 +272,7 @@ double * flash_calculation_calculate_status_at_fixed_pressure_and_Fv(EOS *eos, d
 
         eos->pres = P;
         eos->temp = T_est;
-        flash_calculation_estimate_K(eos, K);
+        flash_calculation_estimate_K(eos, z, K);
 	}
     else {
         eos->pres = P;

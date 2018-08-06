@@ -239,7 +239,6 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             xs[i] = malloc(ncomp * sizeof(*(xs[i])));
             for (k = 0; k < ncomp; k++) {
                 xs[i][k] = z[i][k];
-                xs[i][k] = 0.33333;
                 printf("xs[%d]: %e\n", k, xs[i][k]);
             }
 
@@ -257,7 +256,6 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
                 i < set_no_list->set_end; i++) {
             for (k = 0; k < ncomp; k++) {
                 xs[i][k] = z[i][k];
-                xs[i][k] = 0.33333;
             }
 
             P = flash_calculation_saturation_calculation(eos, xs[i],

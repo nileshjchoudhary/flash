@@ -23,8 +23,14 @@ void flash_calculation_calculate_composition(double *K, double *z, double F_v,
     int i;
 
     for (i = 0; i < ncomp; i++) {
-        x_l[i] = z[i] / (1.0 + (K[i] - 1.0) * F_v);
-        x_v[i] = K[i] * z[i] / (1.0 + (K[i] - 1.0) * F_v);
+        if (z[i] < 1e-10) {
+            x_l[i] = 0.0;
+            x_v[i] = 0.0;
+        }
+        else {
+            x_l[i] = z[i] / (1.0 + (K[i] - 1.0) * F_v);
+            x_v[i] = K[i] * z[i] / (1.0 + (K[i] - 1.0) * F_v);
+        }
     }
 }
 
@@ -42,9 +48,15 @@ void flash_calculation_calculate_composition_derivative(double *K, double *z, do
     double temp;
 
     for (i = 0; i < ncomp; i++) {
-        temp = 1.0 + (K[i] - 1.0) * F_v;
-        dx_l[i] = - z[i] / (temp * temp) * F_v;
-        dx_v[i] = z[i] / temp - z[i] * K[i] / (temp * temp) * F_v;
+        if (z[i] < 1e-10) {
+            dx_l[i] = 0.0;
+            dx_v[i] = 0.0;
+        }
+        else {
+            temp = 1.0 + (K[i] - 1.0) * F_v;
+            dx_l[i] = - z[i] / (temp * temp) * F_v;
+            dx_v[i] = z[i] / temp - z[i] * K[i] / (temp * temp) * F_v;
+        }
     }
 }
 
@@ -61,10 +73,14 @@ double flash_calculation_calculate_equilibrium_equation(PHASE *phase_L, PHASE *p
     double error = 0.0;
 
     for (i = 0; i < ncomp; i++) {
-        G[i] = log(phase_V->mf[i]) + log(phase_V->phi[i]);
-        G[i] += - log(phase_L->mf[i]) - log(phase_L->phi[i]);
-
-        error += G[i] * G[i];
+        if (phase_V->mf[i] < 1e-10 && phase_L->mf[i] < 1e-10) {
+            G[i] = 0.0;
+        }
+        else {
+            G[i] = log(phase_V->mf[i]) + log(phase_V->phi[i]);
+            G[i] += - log(phase_L->mf[i]) - log(phase_L->phi[i]);
+            error += G[i] * G[i];
+        }
     }
 
     return error;
@@ -86,18 +102,24 @@ void flash_calculation_calculate_equilibrium_equation_derivative(PHASE *phase_L,
 
     for (i = 0; i < ncomp; i++) {
         for (j = 0; j < ncomp; j++) {
-            if (i == j) {
-                dG[i * ncomp + j] = 1.0 / phase_V->mf[i] * dx_v[i] 
-                    - 1.0 / phase_L->mf[i] * dx_l[i];
-            }
-            else {
+            if (dx_l[i] < 1e-10 || dx_l[j] < 1e-10
+                    || dx_v[i] < 1e-10 || dx_v[j] < 1e-10) {
                 dG[i * ncomp + j] = 0.0;
             }
+            else {
+                if (i == j) {
+                    dG[i * ncomp + j] = 1.0 / phase_V->mf[i] * dx_v[i] 
+                        - 1.0 / phase_L->mf[i] * dx_l[i];
+                }
+                else {
+                    dG[i * ncomp + j] = 0.0;
+                }
 
-            dG[i * ncomp + j] += 1.0 / phase_V->phi[i] 
-                * phase_V->dphi_dx[i * ncomp + j] * dx_v[j]
-                - 1.0 / phase_L->phi[i] 
-                * phase_L->dphi_dx[i * ncomp + j] * dx_l[j];
+                dG[i * ncomp + j] += 1.0 / phase_V->phi[i] 
+                    * phase_V->dphi_dx[i * ncomp + j] * dx_v[j]
+                    - 1.0 / phase_L->phi[i] 
+                    * phase_L->dphi_dx[i * ncomp + j] * dx_l[j];
+            }
         }
     }
 }
@@ -115,27 +137,68 @@ void flash_calculation_calculate_equilibrium_equation_derivative(PHASE *phase_L,
 
 void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, int ncomp)
 {
-    int i;
-    double *x;
+    int i, j, ni, nj, n;
+    int *flag;
+    double *x, *rhs, *mat;
 
-    x = malloc(ncomp * sizeof(*x));
-
+    flag = malloc(ncomp * sizeof(*flag));
+    n = 0;
     for (i = 0; i < ncomp; i++) {
-        G[i] = -G[i];
-    }
-
-    flash_calculation_solve_dense_linear_system(dG, G, x, ncomp);
-
-    for (i = 0; i < ncomp; i++) {
-        K[i] += x[i];
-
-        if (K[i] < 0.0) {
-            K[i] -= x[i];
-            K[i] *= 0.5;
+        if (K[i] < 1e-20) {
+            flag[i] = 0;
+        }
+        else {
+            flag[i] = 1;
+            n++;
         }
     }
 
+    x = malloc(n * sizeof(*x));
+    rhs = malloc(n * sizeof(*rhs));
+    mat = malloc(n * sizeof(*mat));
+
+    ni = 0;
+    for (i = 0; i < ncomp; i++) {
+        if (flag[i]) {
+            rhs[ni] = -G[i];
+            ni++;
+        }
+    }
+    ni = 0;
+    for (i = 0; i < ncomp; i++) {
+        if (flag[i]) {
+            nj = 0;
+
+            for (j = 0; j < ncomp; j++) {
+                if (flag[j]) {
+                    mat[ni * n + nj] = dG[i * ncomp + j];
+                    nj++;
+                }
+            }
+            ni++;
+        }
+    }
+
+    flash_calculation_solve_dense_linear_system(mat, rhs, x, n);
+
+    ni = 0;
+    for (i = 0; i < ncomp; i++) {
+        if (flag[i]) {
+            K[i] += x[ni];
+
+            if (K[i] < 0.0) {
+                K[i] -= x[ni];
+                K[i] *= 0.5;
+            }
+
+            ni++;
+        }
+    }
+
+    free(flag);
     free(x);
+    free(rhs);
+    free(mat);
 }
 
 /* ### Calculate the value of the Rachford-Rice equation
@@ -144,13 +207,18 @@ void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, in
 # $$
 */
 
-double flash_calculation_calculate_RachfordRice_equation_value(double *K, double *z, double n_V, int ncomp)
+double flash_calculation_calculate_RachfordRice_equation_value(double *K, 
+        double *z, double n_V, int ncomp)
 {
     int i;
     double value = 0.0;
 
     for (i = 0; i < ncomp; i++) {
-        value += z[i] * (K[i] - 1.0) / (1.0 + (K[i] - 1.0) * n_V);
+        if (z[i] < 1e-10) 
+            continue;
+
+        value += z[i] * (K[i] - 1.0) 
+            / (1.0 + (K[i] - 1.0) * n_V);
     }
 
     return value;
@@ -162,12 +230,16 @@ double flash_calculation_calculate_RachfordRice_equation_value(double *K, double
 # $$
 */
 
-double flash_calculation_calculate_RachfordRice_equation_derivative(double *K, double *z, double n_V, int ncomp)
+double flash_calculation_calculate_RachfordRice_equation_derivative(double *K, 
+        double *z, double n_V, int ncomp)
 {
     int i;
     double value = 0.0;
 
     for (i = 0; i < ncomp; i++) {
+        if (z[i] < 1e-10) 
+            continue;
+
         value += - z[i] * (K[i] - 1.0) * (K[i] - 1.0) 
             / (1.0 + (K[i] - 1.0) * n_V) 
             / (1.0 + (K[i] - 1.0) * n_V);
@@ -189,18 +261,21 @@ double flash_calculation_calculate_RachfordRice_equation_derivative(double *K, d
 # 3. Re-calculate $V$ and $\frac{\partial V}{\partial F_v}$
 */
 
-double flash_calculation_solve_RachfordRice_equation(double *K, double *z, double n_V0, int ncomp)
+double flash_calculation_solve_RachfordRice_equation(double *K, 
+        double *z, double n_V0, int ncomp)
 {
     int itr = 0;
     double n_V = n_V0, F, J, d;
 
     while(1) {
-        F = flash_calculation_calculate_RachfordRice_equation_value(K, z, n_V, ncomp);
+        F = flash_calculation_calculate_RachfordRice_equation_value(K, 
+                z, n_V, ncomp);
 
         if (fabs(F) < 1e-10)
             break;
 
-        J = flash_calculation_calculate_RachfordRice_equation_derivative(K, z, n_V, ncomp);
+        J = flash_calculation_calculate_RachfordRice_equation_derivative(K, 
+                z, n_V, ncomp);
 
         d = - F / J;
         n_V += d;
@@ -234,6 +309,9 @@ void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V,
 	int i;
 
     for (i = 0; i < ncomp; i++) {
+        if (K[i] < 1e-10) 
+            continue;
+
         K[i] = K[i] * fug_L[i] / fug_V[i];
 	}
 }
@@ -332,7 +410,7 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     /* Initial estimate K */
 	K0 = malloc(ncomp * sizeof(*K0));
     if (Fv <= 0.0) {
-        flash_calculation_estimate_K(eos, K0);
+        flash_calculation_estimate_K(eos, z, K0);
         F_v = 0.5;
 
 #if 0
@@ -346,11 +424,14 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     else {
         sum_K = 0.0;
         for (i = 0; i < ncomp; i++) {
+            if (K[i] < 1e-10) 
+                continue;
+
             sum_K += log(K[i]) * log(K[i]);
 		}
 
         if (sum_K < 1e-5) {
-            flash_calculation_estimate_K(eos, K0);
+            flash_calculation_estimate_K(eos, z, K0);
             F_v = 0.5;
 		}
         else {
@@ -359,23 +440,6 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
             F_v = Fv;
 		}
 	}
-
-#if 0
-    {
-        double *KK;
-
-        KK = malloc(ncomp * sizeof(*KK));
-        flash_calculation_estimate_K(eos, KK);
-
-        printf("Estimate K:\n");
-        for (i = 0; i < ncomp; i++) {
-            printf("%e ", KK[i]);
-        }
-        printf("\n");
-
-        free(KK);
-    }
-#endif
 
     /* Initial compositions x_v and x_l */
 	x_l = malloc(ncomp * sizeof(*x_l));
@@ -450,7 +514,12 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     if (phase_V->density > phase_L->density) {
         F_v = 1.0 - F_v;
         for (i = 0; i < ncomp; i++) {
-            K[i] = 1.0 / K0[i];
+            if (K0[i] < 1e-10) {
+                K[i] = 0.0;
+            }
+            else {
+                K[i] = 1.0 / K0[i];
+            }
         }
     }
     else {

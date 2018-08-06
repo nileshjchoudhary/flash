@@ -444,10 +444,10 @@ int main(int argc, char **argv)
         PS_SIMPLEX_ISOTHERM *ps_simplex;
 
         set_no_list = flash_calculation_generate_simplex_set_no(0.0, 
-                1.0, 0.25, comp_list->ncomp);
+                1.0, 0.1, comp_list->ncomp);
         flash_calculation_generate_simplex_set_no_print(set_no_list);
 
-        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.25,
+        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.1,
                 comp_list->ncomp, &x_list);
 
         ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
