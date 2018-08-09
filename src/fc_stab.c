@@ -81,21 +81,36 @@ double * flash_calculation_stability_analysis_initial_estimate(PHASE *phase)
 
     /* Inverse Wilson correlation */
     for (i = 0; i < ncomp; i++) {
-        Xi = phase->mf[i] / K[i];
+        if (K[i] < 1e-10) {
+            Xi = 0.0;
+        }
+        else {
+            Xi = phase->mf[i] / K[i];
+        }
         *(est + n_guess * ncomp + i) = Xi;
     }
     n_guess += 1;
 
     /* Wilson correlation power(1./3.) */
     for (i = 0; i < ncomp; i++) {
-        Xi = pow(K[i], 1.0 / 3.0) * phase->mf[i];
+        if (K[i] < 1e-10) {
+            Xi = 0.0;
+        }
+        else {
+            Xi = pow(K[i], 1.0 / 3.0) * phase->mf[i];
+        }
         *(est + n_guess * ncomp + i) = Xi;
     }
     n_guess += 1;
 
     /* Inverse Wilson correlation power(1./3.) */
     for (i = 0; i < ncomp; i++) {
-        Xi = phase->mf[i] / pow(K[i], 1.0 / 3.0); 
+        if (K[i] < 1e-10) {
+            Xi = 0.0;
+        }
+        else {
+            Xi = phase->mf[i] / pow(K[i], 1.0 / 3.0); 
+        }
         *(est + n_guess * ncomp + i) = Xi;
     }
     n_guess += 1;
@@ -163,7 +178,7 @@ void flash_calculation_SS_method_update_X(PHASE *phase,
     int ncomp = phase->ncomp, i;
 
     for (i = 0; i < ncomp; i++) {
-        if (phase->mf[i] < 1e-10) {
+        if (X_t[i] < 1e-10) {
             X_t[i] = 0.0;
         }
         else {
@@ -234,7 +249,7 @@ void flash_calculation_calculate_stability_equilibrium_equation(PHASE *phase, PH
     int ncomp = phase->ncomp, i;
 
     for (i = 0; i < ncomp; i++) {
-        if (phase->mf[i] < 1e-10) {
+        if (X_t[i] < 1e-10) {
             D[i] = 0.0;
         }
         else {
@@ -461,7 +476,8 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
     dD = malloc(ncomp * ncomp * sizeof(*dD));
     res = malloc(ncomp * sizeof(*res));
 
-    n_guess = ncomp + 4;
+    //n_guess = ncomp + 4;
+    n_guess = 4;
     est = flash_calculation_stability_analysis_initial_estimate(phase);
 
     x_t = malloc(ncomp * sizeof(*x_t));

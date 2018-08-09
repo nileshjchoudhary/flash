@@ -8,8 +8,9 @@
 # At a given temperature, search a pressure $P_s$ at which a single phase exists and 
 a pressure $P_u$ at which two phases co-exist. The stability test is used in this function.
 */
-void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, double T, double P_est, 
-	int search, double search_step, int Ps_found, int Pu_found, double *Pu_Ps, double P_max)
+void flash_calculation_saturation_calculation_search_Pu_Ps(EOS *eos, double *z, double T, 
+        double P_est, int search, double search_step, int Ps_found, int Pu_found, double *Pu_Ps, 
+        double P_max)
 {
 	/* search: 0 upper
 			   1 down */
@@ -415,6 +416,8 @@ double flash_calculation_saturation_calculation(EOS *eos, double *z, double T, d
             search, search_step, 0, 0, Pu_Ps, P_max);
     Pu = Pu_Ps[0];
 	Ps = Pu_Ps[1];
+
+    //printf("Pu: %e, Ps: %e\n", Pu, Ps);
 
     if (Pu <= 1.0 && Ps <= 1.0) {
         return 1.0;

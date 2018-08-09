@@ -39,9 +39,9 @@ int flash_calculation_generate_simplex(double start, double end,
     if (ncomp == 2) {
         sum = (int)((end - start) / dx + 0.5) + 1;
         //dx = (end - start) / sum;
-        printf("start: %e, end: %e, dx: %e\n", start, 
-                end, dx);
-        printf("dx: %e, sum: %d\n", dx, sum);
+        //printf("start: %e, end: %e, dx: %e\n", start, 
+        //        end, dx);
+        //printf("dx: %e, sum: %d\n", dx, sum);
 
         *x_list = malloc(sum * sizeof(**x_list));
         x_list0 = *x_list;
@@ -61,7 +61,7 @@ int flash_calculation_generate_simplex(double start, double end,
 
     sub_sum = (int)((end - start) / dx + 0.5) + 1;
     //dx = (end - start) / sub_sum;
-    printf("DX: %e, sub_sum: %d\n", dx, sub_sum);
+    //printf("DX: %e, sub_sum: %d\n", dx, sub_sum);
 
     *x_list = malloc(sum * sizeof(**x_list));
     x_list0 = *x_list;
@@ -192,6 +192,21 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
     return set_no_list;
 }
 
+void flash_calculation_generate_simplex_set_no_free(SET_NO_LIST **set_no_list)
+{
+    int i;
+    SET_NO_LIST *set_no_list0 = *set_no_list;
+
+    if (set_no_list0->child != NULL) {
+        for (i = 0; i != set_no_list0->nchild; i++) {
+            flash_calculation_generate_simplex_set_no_free(&(set_no_list0->child[i])); 
+        }
+    }
+    else {
+        free(*set_no_list);
+    }
+}
+
 void flash_calculation_generate_simplex_set_no_print(SET_NO_LIST *set_no_list)
 {
     int i;
@@ -233,19 +248,24 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
     }
     else {
         /* upper */
-        P = Ps_u_est;
+        if (Ps_u_est > 1.0) {
+            P = Ps_u_est;
+        }
+        else {
+            P = 100.0;
+        }
+
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
             xs[i] = malloc(ncomp * sizeof(*(xs[i])));
+            printf("-------------------upper\n");
             for (k = 0; k < ncomp; k++) {
                 xs[i][k] = z[i][k];
-                printf("xs[%d]: %e\n", k, xs[i][k]);
+                printf("x[%d]: %e\n", k, xs[i][k]);
             }
 
             P = flash_calculation_saturation_calculation(eos, xs[i],
                     T, P, 0, dP, P_max);
-
-            printf("upper saturation: %e\n", P);
 
             Ps_u[i] = P;
         }
@@ -254,15 +274,27 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
         P = Ps_l_est;
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
+            //printf("-------------------lower\n");
             for (k = 0; k < ncomp; k++) {
                 xs[i][k] = z[i][k];
+                //printf("x[%d]: %e\n", k, xs[i][k]);
             }
 
             P = flash_calculation_saturation_calculation(eos, xs[i],
                     T, P, 1, dP, P_max);
-            printf("lower saturation: %e\n", P);
 
             Ps_l[i] = P;
+        }
+
+        for (i = set_no_list->set_begin;
+                i < set_no_list->set_end; i++) {
+            double temp;
+
+            if (Ps_l[i] > Ps_u[i]) {
+                temp = Ps_u[i];
+                Ps_u[i] = Ps_l[i];
+                Ps_l[i] = temp;
+            }
         }
     }
 }
@@ -296,4 +328,277 @@ flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
 
     return ps;
 }
+
+void
+flash_calculation_saturation_pressure_simplex_isotherm_free(PS_SIMPLEX_ISOTHERM **ps)
+{
+    int i;
+    PS_SIMPLEX_ISOTHERM *ps0 = *ps;
+
+    free(ps0->Ps_u);
+    free(ps0->Ps_l);
+    for (i = 0; i < ps0->n; i++) {
+        free(ps0->xs[i]);
+    }
+    free(ps0->xs);
+
+    free(*ps);
+}
+
+
+void flash_calculation_saturation_pressure_simplex_isotherm_output(PS_SIMPLEX_ISOTHERM *ps, 
+        int ncomp, char *output)
+{
+    int i, k;
+    char file_name[100];
+    FILE *fp;
+
+    sprintf(file_name, "%s-simplex-PS-PM.csv", output);
+
+    fp = fopen(file_name, "a");
+
+    for (i = 0; i < ps->n; i++) {
+        for (k = 0; k < ncomp; k++) {
+            fprintf(fp, "%e,", ps->xs[i][k]);
+        }
+
+        fprintf(fp, "%e,", ps->Ps_u[i]);
+        fprintf(fp, "%e\n", ps->Ps_l[i]);
+    }
+    fclose(fp);
+}
+
+PS_SIMPLEX_ISOTHERM *
+flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list,
+    double T, double dx, double dP, double P_max, char *output)
+{
+    int nx;
+    double **x_list;
+    SET_NO_LIST *set_no_list;
+    PS_SIMPLEX_ISOTHERM *ps_simplex;
+
+    set_no_list = flash_calculation_generate_simplex_set_no(0.0, 
+            1.0, dx, comp_list->ncomp);
+    nx = flash_calculation_generate_simplex(0.0, 1.0, dx,
+            comp_list->ncomp, &x_list);
+
+    ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
+            x_list, nx, set_no_list, T, 100.0, 1.0, dP, P_max);
+
+    flash_calculation_saturation_pressure_simplex_isotherm_output(ps_simplex, 
+            comp_list->ncomp, output);
+
+    flash_calculation_generate_simplex_set_no_free(&set_no_list);
+
+    return ps_simplex;
+}
+
+
+SPLIT_SIMPLEX_ISOTHERM *
+flash_calculation_split_simplex_isotherm_data(COMP_LIST *comp_list,
+    PS_SIMPLEX_ISOTHERM *ps, double dP, char *output)
+{
+    SPLIT_SIMPLEX_ISOTHERM *sp;
+
+    sp = flash_calculation_split_simplex_isotherm(comp_list,
+            ps, dP);
+    flash_calculation_split_simplex_isotherm_output(sp, 
+            comp_list->ncomp, output);
+
+    return sp;
+}
+
+SPLIT_SIMPLEX_ISOTHERM *
+flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
+        PS_SIMPLEX_ISOTHERM *ps, double dP)
+{
+    int i, j, k, final_n, ncomp = comp_list->ncomp;
+    SPLIT_SIMPLEX_ISOTHERM *sp;
+    EOS *eos;
+    double *K0;
+    PHASE *phase;
+
+    sp = malloc(sizeof(*sp));
+    sp->T = ps->T;
+
+    final_n = 0;
+    for (i = 0; i < ps->n; i++) {
+        double Psu, Psl;
+
+        Psu = ps->Ps_u[i];
+        Psl = ps->Ps_l[i];
+
+        if (Psu - Psl > 1e-3) {
+            final_n++;
+        }
+    }
+
+    sp->n = final_n;
+    sp->nP = malloc(sp->n * sizeof(*(sp->nP)));
+    sp->P = malloc(sp->n * sizeof(*(sp->P)));
+    sp->Fv = malloc(sp->n * sizeof(*(sp->Fv)));
+    sp->K = malloc(sp->n * sizeof(*(sp->K)));
+    sp->xs = malloc(sp->n * sizeof(*(sp->xs)));
+
+    final_n = 0;
+    for (i = 0; i < ps->n; i++) {
+        double Psu, Psl;
+        int nP0;
+
+        Psu = ps->Ps_u[i];
+        Psl = ps->Ps_l[i];
+
+        printf("Psu: %e, Psl: %e\n", Psu, Psl);
+
+        if (Psu - Psl < 1e-3)
+            continue;
+
+        nP0 = (int)((Psu - Psl) / dP);
+        printf("final_n: %d, nP: %d\n", final_n, nP0);
+
+        if (fabs(Psl + nP0 * dP - Psu) > 1e-3) {
+            nP0++;
+        }
+        sp->P[final_n] = malloc(nP0 * sizeof(*(sp->P[final_n])));
+
+        sp->nP[final_n] = nP0;
+        for (j = 0; j < nP0; j++) {
+            if (Psu - (Psl + j * dP) > 1e-3) {
+                sp->P[final_n][j] = Psl + j * dP;
+            }
+            else {
+                sp->P[final_n][j] = Psu;
+            }
+        }
+
+        sp->Fv[final_n] = malloc(nP0 * sizeof(*(sp->Fv[final_n])));
+        sp->K[final_n] = malloc(nP0 * sizeof(*(sp->K[final_n])));
+        for (j = 0; j < nP0; j++) {
+            sp->K[final_n][j] = malloc(ncomp 
+                    * sizeof(*(sp->K[final_n][j])));
+        }
+        sp->xs[final_n] = malloc(ncomp 
+                * sizeof(*(sp->xs[final_n])));
+        for (j = 0; j < ncomp; j++) {
+            sp->xs[final_n][j] = ps->xs[i][j];
+        }
+
+        final_n++;
+    }
+
+    K0 = malloc(ncomp * sizeof(*K0));
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+
+    for (i = 0; i < sp->n; i++) {
+        double Fv = 0.5;
+
+        printf("i: %d, nP: %d\n", i, sp->nP[i]);
+        for (j = 0; j < sp->nP[i]; j++) {
+            eos->pres = sp->P[i][j];
+            eos->temp = sp->T;
+
+            if (j == 0) {
+                phase = flash_calculation_phase_new(eos, sp->xs[i]);
+                flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+
+                Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
+                        sp->xs[i], K0, Fv, 1e-10);
+
+                flash_calculation_phase_free(&phase);
+            }
+            else {
+                Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
+                        sp->xs[i], K0, Fv, 1e-10);
+            }
+
+            sp->Fv[i][j] = Fv;
+            for (k = 0; k < ncomp; k++) {
+                sp->K[i][j][k] = K0[k];
+            }
+        }
+    }
+
+    free(eos);
+
+    return sp;
+}
+
+
+void flash_calculation_split_simplex_isotherm_free(SPLIT_SIMPLEX_ISOTHERM **sp)
+{
+    int i, j;
+    SPLIT_SIMPLEX_ISOTHERM *sp0 = *sp;
+
+    for (i = 0; i < sp0->n; i++) {
+        free(sp0->P[i]);
+        free(sp0->Fv[i]);
+
+        for (j = 0; j < sp0->nP[i]; j++) {
+            free(sp0->K[i][j]);
+        }
+        free(sp0->xs[i]);
+    }
+
+    free(sp0->nP);
+
+    free(*sp);
+}
+
+void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp, 
+        int ncomp, char *output)
+{
+    int i, j, k;
+    char file_name[100];
+    FILE *fp;
+
+    sprintf(file_name, "%s-simplex-SPLIT-PM.csv", output);
+
+    fp = fopen(file_name, "a");
+
+    for (i = 0; i < sp->n; i++) {
+        for (j = 0; j < sp->nP[i]; j++) {
+            for (k = 0; k < ncomp; k++) {
+                fprintf(fp, "%e,", sp->xs[i][k]);
+            }
+
+            fprintf(fp, "%e,", sp->P[i][j]);
+            fprintf(fp, "%e,", sp->Fv[i][j]);
+
+            for (k = 0; k < ncomp; k++) {
+                fprintf(fp, "%e,", sp->K[i][j][k]);
+            }
+
+            fprintf(fp, "\n");
+        }
+    }
+    fclose(fp);
+}
+
+void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
+        double T, double dx, double dP, double P_max, char *output)
+{
+    PS_SIMPLEX_ISOTHERM *ps;
+    SPLIT_SIMPLEX_ISOTHERM *sp;
+
+    printf("===================================\n");
+    ps = flash_calculation_saturation_pressure_simplex_isotherm_data(comp_list,
+            T, dx, dP, P_max, output);
+    printf("Saturation pressure calculation is done!\n");
+    printf("===================================\n");
+
+    printf("===================================\n");
+    sp = flash_calculation_split_simplex_isotherm_data(comp_list,
+            ps, dP, output);
+    printf("phase split calculation is done!\n");
+    printf("===================================\n");
+
+    flash_calculation_saturation_pressure_simplex_isotherm_free(&ps);
+    flash_calculation_split_simplex_isotherm_free(&sp);
+}
+
+
+
+
+
+
 

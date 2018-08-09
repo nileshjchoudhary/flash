@@ -351,7 +351,7 @@ int main(int argc, char **argv)
         double **x_list, **x_list_rank;
         char output_rank[100];
 
-        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.25,
+        nx = flash_calculation_generate_simplex(0.0, 1.0, .25,
                 comp_list->ncomp, &x_list);
 
         nx_rank = nx / nprocs;
@@ -440,18 +440,18 @@ int main(int argc, char **argv)
         int nx, nx_rank;
         double **x_list, **x_list_rank, comp_range[2];
         char output_rank[100];
-        SET_NO_LIST *set_no_list;
-        PS_SIMPLEX_ISOTHERM *ps_simplex;
 
-        set_no_list = flash_calculation_generate_simplex_set_no(0.0, 
-                1.0, 0.1, comp_list->ncomp);
-        flash_calculation_generate_simplex_set_no_print(set_no_list);
+        flash_calculation_saturation_pressure_simplex_isotherm_data(comp_list,
+                fm->T, fm->dxx, fm->dP, fm->P_max, fm->output);
+    }
 
-        nx = flash_calculation_generate_simplex(0.0, 1.0, 0.1,
-                comp_list->ncomp, &x_list);
+    if (strcmp(fm->type, "PM_data_simplex") == 0) {
+        int nx, nx_rank;
+        double **x_list, **x_list_rank, comp_range[2];
+        char output_rank[100];
 
-        ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
-                x_list, nx, set_no_list, fm->T, 100.0, 1.0, fm->dP, fm->P_max);
+        flash_calculation_simplex_isotherm_data(comp_list, 
+                fm->T, fm->dxx, fm->dP, fm->P_max, fm->output);
     }
 
     {
