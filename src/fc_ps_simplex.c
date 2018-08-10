@@ -448,13 +448,10 @@ flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
         Psu = ps->Ps_u[i];
         Psl = ps->Ps_l[i];
 
-        printf("Psu: %e, Psl: %e\n", Psu, Psl);
-
         if (Psu - Psl < 1e-3)
             continue;
 
         nP0 = (int)((Psu - Psl) / dP);
-        printf("final_n: %d, nP: %d\n", final_n, nP0);
 
         if (fabs(Psl + nP0 * dP - Psu) > 1e-3) {
             nP0++;
@@ -492,7 +489,6 @@ flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
     for (i = 0; i < sp->n; i++) {
         double Fv = 0.5;
 
-        printf("i: %d, nP: %d\n", i, sp->nP[i]);
         for (j = 0; j < sp->nP[i]; j++) {
             eos->pres = sp->P[i][j];
             eos->temp = sp->T;
@@ -565,7 +561,7 @@ void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp,
             fprintf(fp, "%e,", sp->Fv[i][j]);
 
             for (k = 0; k < ncomp; k++) {
-                fprintf(fp, "%e,", sp->K[i][j][k]);
+                fprintf(fp, "%e", sp->K[i][j][k]);
             }
 
             fprintf(fp, "\n");
