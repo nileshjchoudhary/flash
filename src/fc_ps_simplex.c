@@ -236,7 +236,7 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
         double P_max, double **xs, double *Ps_u, double *Ps_l)
 {
     int i, k, ncomp = eos->ncomp;
-    double P;
+    double P, P0, P1;
 
     if (set_no_list->child != NULL) {
         for (i = 0; i != set_no_list->nchild; i++) {
@@ -255,17 +255,26 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             P = 100.0;
         }
 
+        P0 = P1 = P;
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
             xs[i] = malloc(ncomp * sizeof(*(xs[i])));
-            printf("-------------------upper\n");
+            //printf("-------------------upper\n");
             for (k = 0; k < ncomp; k++) {
                 xs[i][k] = z[i][k];
-                printf("x[%d]: %e\n", k, xs[i][k]);
             }
 
-            P = flash_calculation_saturation_calculation(eos, xs[i],
-                    T, P, 0, dP, P_max);
+            if (P1 > P0) {
+                P = flash_calculation_saturation_calculation(eos, xs[i],
+                        T, P + 0.1, 0, dP, P_max);
+            }
+            else {
+                P = flash_calculation_saturation_calculation(eos, xs[i],
+                        T, P - 0.1, 0, dP, P_max);
+            }
+
+            P1 = P;
+            P0 = P1;
 
             Ps_u[i] = P;
         }
@@ -281,7 +290,7 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             }
 
             P = flash_calculation_saturation_calculation(eos, xs[i],
-                    T, P, 1, dP, P_max);
+                    T, P - 0.1, 1, dP, P_max);
 
             Ps_l[i] = P;
         }
@@ -558,10 +567,10 @@ void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp,
             }
 
             fprintf(fp, "%e,", sp->P[i][j]);
-            fprintf(fp, "%e,", sp->Fv[i][j]);
+            fprintf(fp, "%e", sp->Fv[i][j]);
 
             for (k = 0; k < ncomp; k++) {
-                fprintf(fp, "%e", sp->K[i][j][k]);
+                fprintf(fp, ",%e", sp->K[i][j][k]);
             }
 
             fprintf(fp, "\n");
