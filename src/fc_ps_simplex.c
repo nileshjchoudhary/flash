@@ -585,17 +585,19 @@ void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list,
     PS_SIMPLEX_ISOTHERM *ps;
     SPLIT_SIMPLEX_ISOTHERM *sp;
 
-    printf("===================================\n");
+    printf("==========================================\n");
     ps = flash_calculation_saturation_pressure_simplex_isotherm_data(comp_list,
             T, dx, dP, P_max, output);
     printf("Saturation pressure calculation is done!\n");
-    printf("===================================\n");
+    printf("=========================================\n");
+    printf("\n");
 
-    printf("===================================\n");
+    printf("=========================================\n");
     sp = flash_calculation_split_simplex_isotherm_data(comp_list,
             ps, dP, output);
     printf("phase split calculation is done!\n");
-    printf("===================================\n");
+    printf("=========================================\n");
+    printf("\n");
 
     flash_calculation_saturation_pressure_simplex_isotherm_free(&ps);
     flash_calculation_split_simplex_isotherm_free(&sp);
