@@ -1,0 +1,14 @@
+type        envelope_data
+prop_file   prop.dat
+bin_file    bin.dat
+z_file      z.dat
+T_min       100.0
+T_max       900.0
+dT          2.0
+P_min       20.0
+P_max       500.0
+dP          2.0
+mole        1000
+mole_range  694 694    225 225   47 47    11 11  15 15   8 8
+mole_d      1         1       1         1       1         1
+output      spe5-case2

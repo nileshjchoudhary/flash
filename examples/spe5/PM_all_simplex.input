@@ -1,0 +1,12 @@
+type        PM_data_simplex
+prop_file   prop.dat
+bin_file    bin.dat
+z_file      z.dat
+T           160.0
+P_min       1.0
+P_max       1000.0
+mole        100
+mole_range  45 75   1 35   1 10   1 25   1 20   1 7
+dP          2.0
+dxx         0.02
+output      PM-simplex-T160

@@ -1,0 +1,13 @@
+type        envelope_PM_data
+prop_file   prop.dat
+bin_file    bin.dat
+z_file      z.dat
+T           344.261
+P_min       100.0
+P_max       400.0
+dP          20.0
+mole        100
+mole_range  45 75   0 35   0 10   0 25   0 20   1 4
+mole_d          1      7     2      5      4     3
+dxx         0.01
+output      diagram-PM
