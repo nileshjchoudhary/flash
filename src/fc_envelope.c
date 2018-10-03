@@ -233,6 +233,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
 	int count, n, i, begin_index;
 	int flag, flag2, flag3;
     PHASE_ENVELOPE *pe;
+    int insert_time = 0;
 
 	n = (int)((T_end - T_start) / dT) + 1;
 	T_list = malloc(n * sizeof(*T_list));
@@ -345,6 +346,7 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
 
                     insert_count++;
                 }
+
             }
         }
 
@@ -380,6 +382,12 @@ PHASE_ENVELOPE * flash_calculation_phase_saturation_envelope_construction(EOS *e
         free(insert_index);
         free(insert_P);
         free(insert_T);
+
+        insert_time++;
+
+        if (insert_time > 10) {
+            flag_dP = 1;
+        }
 
         if (flag_dP) {
             break;
@@ -515,6 +523,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
     int flag, flag2, flag3 = 0;
     EOS *eos;
     double comp_min, comp_max;
+    int insert_time = 0;
 
     eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
 
@@ -527,7 +536,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
         comp_max = comp_range[1];
     }
 
-    n_x_list = (int)((comp_max - comp_min) / dx) + 1;
+    n_x_list = (int)((comp_max - comp_min) / dx);
     dx = (comp_max - comp_min) / n_x_list;
 
     x_list = malloc(n_x_list * sizeof(*x_list));
@@ -723,6 +732,11 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
 
         pe_pm->Ps = Ps_tmp;
         pe_pm->xs = X_tmp;
+
+        insert_time++;
+
+        if (insert_time > 10) 
+            flag_dP = 1;
 
         if (flag_dP) {
             break;

@@ -306,7 +306,7 @@ static int flash_calculation_generate_x_number_new_2(int mole, int *mole_range,
     double dx;
 
     if (mole_range == NULL) {
-        mole_min = 1;
+        mole_min = 0;
         mole_max = mole;
     }
     else {
@@ -322,13 +322,8 @@ static int flash_calculation_generate_x_number_new_2(int mole, int *mole_range,
     }
 
     mole_max = mole_max > mole ? mole : mole_max;
-    mole_min = mole_min < 1 ? 1 : mole_min;
-    if (d > 1) {
-        dx = (double)(mole_max - mole_min) / (d - 1);
-    }
-    else {
-        dx = (double)(mole_max - mole_min) / (d);
-    }
+    mole_min = mole_min < 0 ? 0 : mole_min;
+    dx = (double)(mole_max - mole_min) / (d);
 
     if (ncomp == 2) {
         int mole_min0, mole_max0, mole0;
@@ -336,7 +331,7 @@ static int flash_calculation_generate_x_number_new_2(int mole, int *mole_range,
         sum = d;
 
         if (mole_range == NULL) {
-            mole_min0 = 1;
+            mole_min0 = 0;
             mole_max0 = mole;
         }
         else {
@@ -395,11 +390,11 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
 {
     int i, j, k, sum, sum2, count;
     double **x_list0;
-    double dx;
     int mole_max, mole_min, d;
+    double dx;
 
     if (mole_range == NULL) {
-        mole_min = 1;
+        mole_min = 0;
         mole_max = mole;
     }
     else {
@@ -415,13 +410,9 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
     }
 
     mole_max = mole_max > mole ? mole : mole_max;
-    mole_min = mole_min < 1 ? 1 : mole_min;
-    if (d > 1) {
-        dx = (double)(mole_max - mole_min) / (d - 1);
-    }
-    else {
-        dx = (double)(mole_max - mole_min) / (d);
-    }
+    mole_min = mole_min < 0 ? 0 : mole_min;
+
+    dx = (double)(mole_max - mole_min) / (d);
 
     if (ncomp == 2) {
         int mole_min0, mole_max0, mole0, d0;
@@ -431,7 +422,7 @@ int flash_calculation_generate_x_new_2(int mole, int *mole_range, int *mole_d,
         //printf("mole: %d\n", mole);
         //
         if (mole_range == NULL) {
-            mole_min0 = 1;
+            mole_min0 = 0;
             mole_max0 = mole;
         }
         else {

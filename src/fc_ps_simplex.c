@@ -232,8 +232,8 @@ void flash_calculation_generate_simplex_set_no_print(SET_NO_LIST *set_no_list)
 }
 
 static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_list,
-        EOS *eos, double **z, double T, double Ps_u_est, double Ps_l_est, double dP, 
-        double P_max, double **xs, double *Ps_u, double *Ps_l)
+        EOS *eos, double **z, double *z_range, double T, double Ps_u_est, double Ps_l_est, 
+        double dP, double P_max, double **xs, double *Ps_u, double *Ps_l)
 {
     int i, k, ncomp = eos->ncomp;
     double P, P0, P1;
@@ -243,10 +243,12 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             Ps_u_est = Ps_u[set_no_list->child[i]->set_init];
             Ps_l_est = Ps_l[set_no_list->child[i]->set_init];
             flash_calculation_saturation_pressure_pre_order(set_no_list->child[i],
-                    eos, z, T, Ps_u_est, Ps_l_est, dP, P_max, xs, Ps_u, Ps_l);
+                    eos, z, z_range, T, Ps_u_est, Ps_l_est, dP, P_max, xs, Ps_u, Ps_l);
         }
     }
     else {
+        int valid = 0;
+
         /* upper */
         if (Ps_u_est > 1.0) {
             P = Ps_u_est;
@@ -256,43 +258,90 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
         }
 
         P0 = P1 = P;
+
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
+            int flag = 1;
+
             xs[i] = malloc(ncomp * sizeof(*(xs[i])));
-            //printf("-------------------upper\n");
+
             for (k = 0; k < ncomp; k++) {
-                xs[i][k] = z[i][k];
+                if (z[i][k] < z_range[k*2] 
+                        || z[i][k] > z_range[k*2+1]) {
+                    flag = 0;
+                    break;
+                }
             }
 
-            if (P1 > P0) {
-                P = flash_calculation_saturation_calculation(eos, xs[i],
-                        T, P + 0.1, 0, dP, P_max);
+            if (!flag) {
+                for (k = 0; k < ncomp; k++) {
+                    printf("%e ", z[i][k]);
+                }
+                printf("\n");
+            }
+
+            if (flag) {
+                //printf("-------------------upper\n");
+                for (k = 0; k < ncomp; k++) {
+                    xs[i][k] = z[i][k];
+                }
+
+                if (P1 > P0) {
+                    P = flash_calculation_saturation_calculation(eos, xs[i],
+                            T, P + 0.1, 0, dP, P_max);
+                }
+                else {
+                    P = flash_calculation_saturation_calculation(eos, xs[i],
+                            T, P - 0.1, 0, dP, P_max);
+                }
+
+                P1 = P;
+                P0 = P1;
+
+                Ps_u[i] = P;
+
+                valid++;
             }
             else {
-                P = flash_calculation_saturation_calculation(eos, xs[i],
-                        T, P - 0.1, 0, dP, P_max);
+                for (k = 0; k < ncomp; k++) {
+                    xs[i][k] = -1.0;
+                }
+                Ps_u[i] = -1.0;
             }
-
-            P1 = P;
-            P0 = P1;
-
-            Ps_u[i] = P;
         }
 
         /* lower */
         P = Ps_l_est;
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
-            //printf("-------------------lower\n");
+            int flag = 1;
+
             for (k = 0; k < ncomp; k++) {
-                xs[i][k] = z[i][k];
-                //printf("x[%d]: %e\n", k, xs[i][k]);
+                if (z[i][k] < z_range[k*2] 
+                        || z[i][k] > z_range[k*2+1]) {
+                    flag = 0;
+                    break;
+                }
             }
 
-            P = flash_calculation_saturation_calculation(eos, xs[i],
-                    T, P - 0.1, 1, dP, P_max);
+            if (flag) {
+                //printf("-------------------lower\n");
+                for (k = 0; k < ncomp; k++) {
+                    xs[i][k] = z[i][k];
+                    //printf("x[%d]: %e\n", k, xs[i][k]);
+                }
 
-            Ps_l[i] = P;
+                P = flash_calculation_saturation_calculation(eos, xs[i],
+                        T, P - 0.1, 1, dP, P_max);
+
+                Ps_l[i] = P;
+            }
+            else {
+                for (k = 0; k < ncomp; k++) {
+                    xs[i][k] = -1.0;
+                }
+                Ps_l[i] = -1.0;
+            }
         }
 
         for (i = set_no_list->set_begin;
@@ -305,12 +354,21 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
                 Ps_l[i] = temp;
             }
         }
+
+        //if (valid > 0) {
+        {
+            printf("    From %d to %d ... ", 
+                    set_no_list->set_begin,
+                    set_no_list->set_end);
+            printf(" %d/%d are calculated.\n", valid, 
+                    set_no_list->set_end - set_no_list->set_begin);
+        }
     }
 }
 
 PS_SIMPLEX_ISOTHERM * 
 flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
-        double **z, int nz, SET_NO_LIST *set_no_list, double T, 
+        double **z, int nz, double *z_range, SET_NO_LIST *set_no_list, double T, 
         double Ps_u_est, double Ps_l_est, double dP, double P_max)
 {
     PS_SIMPLEX_ISOTHERM *ps;
@@ -330,7 +388,7 @@ flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
     ps->Ps_l[0] = Ps_l_est;
 
     flash_calculation_saturation_pressure_pre_order(set_no_list,
-            eos, z, T, Ps_u_est, Ps_l_est, dP, P_max, ps->xs, 
+            eos, z, z_range, T, Ps_u_est, Ps_l_est, dP, P_max, ps->xs, 
             ps->Ps_u, ps->Ps_l);
 
     free(eos);
@@ -366,20 +424,35 @@ void flash_calculation_saturation_pressure_simplex_isotherm_output(PS_SIMPLEX_IS
 
     fp = fopen(file_name, "a");
 
+    printf("n: %d\n", ps->n);
+
     for (i = 0; i < ps->n; i++) {
+        int flag = 1;
+
+        printf("i: %d\n", i);
         for (k = 0; k < ncomp; k++) {
-            fprintf(fp, "%e,", ps->xs[i][k]);
+            if (ps->xs[i][k] < 0.0) {
+                flag = 0;
+                break;
+            }
         }
 
-        fprintf(fp, "%e,", ps->Ps_u[i]);
-        fprintf(fp, "%e\n", ps->Ps_l[i]);
+        if (flag) {
+            printf("i: %d\n", i);
+            for (k = 0; k < ncomp; k++) {
+                fprintf(fp, "%e,", ps->xs[i][k]);
+            }
+
+            fprintf(fp, "%e,", ps->Ps_u[i]);
+            fprintf(fp, "%e\n", ps->Ps_l[i]);
+        }
     }
     fclose(fp);
 }
 
 PS_SIMPLEX_ISOTHERM *
 flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list,
-    double T, double dx, double dP, double P_max, char *output)
+    double T, double dx, double *z_range, double dP, double P_max, char *output)
 {
     int nx;
     double **x_list;
@@ -391,8 +464,10 @@ flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list
     nx = flash_calculation_generate_simplex(0.0, 1.0, dx,
             comp_list->ncomp, &x_list);
 
+    printf("Total points: %d\n", nx);
+
     ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
-            x_list, nx, set_no_list, T, 100.0, 1.0, dP, P_max);
+            x_list, nx, z_range, set_no_list, T, 100.0, 1.0, dP, P_max);
 
     flash_calculation_saturation_pressure_simplex_isotherm_output(ps_simplex, 
             comp_list->ncomp, output);
@@ -580,14 +655,15 @@ void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp,
 }
 
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
-        double T, double dx, double dP, double P_max, char *output)
+        double T, double dx, double *z_range, double dP, double P_max, 
+        char *output)
 {
     PS_SIMPLEX_ISOTHERM *ps;
     SPLIT_SIMPLEX_ISOTHERM *sp;
 
     printf("==========================================\n");
     ps = flash_calculation_saturation_pressure_simplex_isotherm_data(comp_list,
-            T, dx, dP, P_max, output);
+            T, dx, z_range, dP, P_max, output);
     printf("Saturation pressure calculation is done!\n");
     printf("=========================================\n");
     printf("\n");
