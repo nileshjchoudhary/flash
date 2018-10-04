@@ -62,15 +62,17 @@ flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list
 
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
-        PS_SIMPLEX_ISOTHERM *ps, double dP);
+        PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max);
 void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp, 
         int ncomp, char *output);
 void flash_calculation_split_simplex_isotherm_free(SPLIT_SIMPLEX_ISOTHERM **sp);
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm_data(COMP_LIST *comp_list,
-    PS_SIMPLEX_ISOTHERM *ps, double dP, char *output);
+    PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max,
+    char *output);
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
-        double T, double dx, double *z_range, double dP, double P_max, char *output);
+        double T, double dx, double *z_range, double dP, 
+        double P_min, double P_max, char *output);
 
 #define FC_PS_SIMPLEX
 #endif

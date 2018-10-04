@@ -12,7 +12,6 @@ static int flash_calculation_generate_simplex_number(double start, double end,
     }
 
     sub_sum = (int)((end - start) / dx + 0.5) + 1;
-    //dx = (end - start) / sub_sum;
 
     sum = 0;
     for (i = 0; i < sub_sum; i++) {
@@ -100,6 +99,25 @@ int flash_calculation_generate_simplex(double start, double end,
     return sum;
 }
 
+static void flash_calculation_add_simplex_set_no(SET_NO_LIST *set_no_list,
+        int count)
+{
+    int i;
+
+    if (set_no_list->nchild == 0) {
+        return;
+    }
+
+    for (i = 0; i < set_no_list->nchild; i++) {
+        set_no_list->child[i]->set_begin += count;
+        set_no_list->child[i]->set_end += count;
+
+        flash_calculation_add_simplex_set_no(set_no_list->child[i], count);
+    }
+
+    return;
+}
+
 SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start, 
         double end, double dx, int ncomp)
 {
@@ -128,6 +146,7 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
     set_no_list->set_begin = 0;
     set_no_list->set_end = flash_calculation_generate_simplex_number(start, 
             end, dx, ncomp);
+    set_no_list->parent = NULL;
     set_no_list->nchild = sub_sum;
     set_no_list->child = malloc(sub_sum * sizeof(*(set_no_list->child)));
 
@@ -163,6 +182,8 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
     for (i = 0; i < sub_sum; i++) {
         set_no_list->child[i]->set_begin += count;
         set_no_list->child[i]->set_end += count;
+
+        flash_calculation_add_simplex_set_no(set_no_list->child[i], count);
 
         count += set_no_list->child[i]->set_end
             - set_no_list->child[i]->set_begin;
@@ -273,12 +294,14 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
                 }
             }
 
+#if 0
             if (!flag) {
                 for (k = 0; k < ncomp; k++) {
                     printf("%e ", z[i][k]);
                 }
                 printf("\n");
             }
+#endif
 
             if (flag) {
                 //printf("-------------------upper\n");
@@ -355,8 +378,7 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             }
         }
 
-        //if (valid > 0) {
-        {
+        if (valid > 0) {
             printf("    From %d to %d ... ", 
                     set_no_list->set_begin,
                     set_no_list->set_end);
@@ -424,12 +446,9 @@ void flash_calculation_saturation_pressure_simplex_isotherm_output(PS_SIMPLEX_IS
 
     fp = fopen(file_name, "a");
 
-    printf("n: %d\n", ps->n);
-
     for (i = 0; i < ps->n; i++) {
         int flag = 1;
 
-        printf("i: %d\n", i);
         for (k = 0; k < ncomp; k++) {
             if (ps->xs[i][k] < 0.0) {
                 flag = 0;
@@ -438,7 +457,6 @@ void flash_calculation_saturation_pressure_simplex_isotherm_output(PS_SIMPLEX_IS
         }
 
         if (flag) {
-            printf("i: %d\n", i);
             for (k = 0; k < ncomp; k++) {
                 fprintf(fp, "%e,", ps->xs[i][k]);
             }
@@ -480,12 +498,13 @@ flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list
 
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm_data(COMP_LIST *comp_list,
-    PS_SIMPLEX_ISOTHERM *ps, double dP, char *output)
+    PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max,
+    char *output)
 {
     SPLIT_SIMPLEX_ISOTHERM *sp;
 
     sp = flash_calculation_split_simplex_isotherm(comp_list,
-            ps, dP);
+            ps, dP, P_min, P_max);
     flash_calculation_split_simplex_isotherm_output(sp, 
             comp_list->ncomp, output);
 
@@ -494,7 +513,7 @@ flash_calculation_split_simplex_isotherm_data(COMP_LIST *comp_list,
 
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
-        PS_SIMPLEX_ISOTHERM *ps, double dP)
+        PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max)
 {
     int i, j, k, final_n, ncomp = comp_list->ncomp;
     SPLIT_SIMPLEX_ISOTHERM *sp;
@@ -512,7 +531,7 @@ flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
         Psu = ps->Ps_u[i];
         Psl = ps->Ps_l[i];
 
-        if (Psu - Psl > 1e-3) {
+        if (Psu - Psl > 1e-3 && Psu > 0.0 && Psl > 0.0) {
             final_n++;
         }
     }
@@ -532,8 +551,15 @@ flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
         Psu = ps->Ps_u[i];
         Psl = ps->Ps_l[i];
 
-        if (Psu - Psl < 1e-3)
+        if (Psu - Psl < 1e-3 || Psu <= 0.0 || Psl <= 0.0)
             continue;
+
+        if (Psu > P_max) {
+            Psu = P_max;
+        }
+        if (Psl < P_min) {
+            Psl = P_min;
+        }
 
         nP0 = (int)((Psu - Psl) / dP);
 
@@ -655,8 +681,8 @@ void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp,
 }
 
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
-        double T, double dx, double *z_range, double dP, double P_max, 
-        char *output)
+        double T, double dx, double *z_range, double dP, double P_min, 
+        double P_max, char *output)
 {
     PS_SIMPLEX_ISOTHERM *ps;
     SPLIT_SIMPLEX_ISOTHERM *sp;
@@ -670,7 +696,7 @@ void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list,
 
     printf("=========================================\n");
     sp = flash_calculation_split_simplex_isotherm_data(comp_list,
-            ps, dP, output);
+            ps, dP, P_min, P_max, output);
     printf("phase split calculation is done!\n");
     printf("=========================================\n");
     printf("\n");

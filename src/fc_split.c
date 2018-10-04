@@ -144,7 +144,7 @@ void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, in
     flag = malloc(ncomp * sizeof(*flag));
     n = 0;
     for (i = 0; i < ncomp; i++) {
-        if (K[i] < 1e-20) {
+        if (K[i] < 1e-25) {
             flag[i] = 0;
         }
         else {
@@ -309,7 +309,7 @@ void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V,
 	int i;
 
     for (i = 0; i < ncomp; i++) {
-        if (K[i] < 1e-10) 
+        if (K[i] < 1e-25) 
             continue;
 
         K[i] = K[i] * fug_L[i] / fug_V[i];
@@ -424,7 +424,7 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     else {
         sum_K = 0.0;
         for (i = 0; i < ncomp; i++) {
-            if (K[i] < 1e-10) 
+            if (K[i] < 1e-25) 
                 continue;
 
             sum_K += log(K[i]) * log(K[i]);
@@ -514,7 +514,7 @@ double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z,
     if (phase_V->density > phase_L->density) {
         F_v = 1.0 - F_v;
         for (i = 0; i < ncomp; i++) {
-            if (K0[i] < 1e-10) {
+            if (K0[i] < 1e-25) {
                 K[i] = 0.0;
             }
             else {
@@ -576,7 +576,7 @@ void flash_calculation_output_split_calculation_map(SPLIT_MAP *sm,
     fprintf(fp, "\n");
 
     for (i = 0; i < sm->n; i++) {
-        if (filter && fabs(sm->K[i][0]) < 1e-12) {
+        if (filter && fabs(sm->K[i][0]) < 1e-25) {
             continue;
         }
 
@@ -621,7 +621,7 @@ void flash_calculation_output_split_calculation_map_PM(SPLIT_PM_MAP *sm,
     fprintf(fp, "\n");
 
     for (i = 0; i < sm->n; i++) {
-        if (filter && fabs(sm->K[i][0]) < 1e-12) {
+        if (filter && fabs(sm->K[i][0]) < 1e-25) {
             continue;
         }
 
