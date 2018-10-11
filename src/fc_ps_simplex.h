@@ -8,6 +8,13 @@ typedef struct PS_SIMPLEX_ISOTHERM_ {
     double *Ps_l;
     double **xs;
 
+    int n_adv;
+    int alloc_adv;
+    double *Ps_u_adv;
+    double *Ps_l_adv;
+    double **xs_adv;
+    int **set_no;
+
 } PS_SIMPLEX_ISOTHERM;
 
 typedef struct SPLIT_SIMPLEX_ISOTHERM_ {
@@ -19,6 +26,13 @@ typedef struct SPLIT_SIMPLEX_ISOTHERM_ {
     double **Fv;
     double ***K;
     double **xs;
+
+    int n_adv;
+    int *nP_adv;
+    double **P_adv;
+    double **Fv_adv;
+    double ***K_adv;
+    double **xs_adv;
 
 } SPLIT_SIMPLEX_ISOTHERM;
 
@@ -57,17 +71,17 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
 void flash_calculation_generate_simplex_set_no_free(SET_NO_LIST **set_no_list);
 void flash_calculation_generate_simplex_set_no_print(SET_NO_LIST *set_no_list);
 PS_SIMPLEX_ISOTHERM *
-flash_calculation_saturation_pressure_simplex_isotherm_data(COMP_LIST *comp_list,
-    double T, double dx, double *z_range, double dP, double P_max, char *output);
+flash_calculation_saturation_pressure_simplex_isotherm_data(double **x_list, int nx, SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
+    double T, double *z_range, double dP, double P_max, char *output);
 
 SPLIT_SIMPLEX_ISOTHERM *
-flash_calculation_split_simplex_isotherm(COMP_LIST *comp_list,
+flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
         PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max);
 void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp, 
         int ncomp, char *output);
 void flash_calculation_split_simplex_isotherm_free(SPLIT_SIMPLEX_ISOTHERM **sp);
 SPLIT_SIMPLEX_ISOTHERM *
-flash_calculation_split_simplex_isotherm_data(COMP_LIST *comp_list,
+flash_calculation_split_simplex_isotherm_data(SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
     PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max,
     char *output);
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
