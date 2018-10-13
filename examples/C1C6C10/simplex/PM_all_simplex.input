@@ -1,0 +1,10 @@
+type        PM_data_simplex
+prop_file   C1C6C10-prop.dat
+bin_file    C1C6C10-bin.dat
+z_file      C1C6C10-z.dat
+T           450.0
+P_min       1.0
+P_max       1000.0
+dP          3
+dxx         0.033
+output      PM-simplex-T450-test

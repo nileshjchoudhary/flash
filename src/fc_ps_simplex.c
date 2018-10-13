@@ -663,7 +663,7 @@ static void flash_calculation_split_simplex_pre_order(SET_NO_LIST *set_no_list,
                 eos->pres = P[i][j];
                 eos->temp = T;
 
-                if (j == 0) {
+                if (j == 0 && i == set_no_list->set_begin) {
                     if (Fv_est <= 0.0 || Fv_est >= 1.0) {
                         PHASE *phase;
 

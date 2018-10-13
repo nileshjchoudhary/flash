@@ -436,6 +436,7 @@ int main(int argc, char **argv)
         free(x_list_rank);
     }
 
+#if 0
     if (strcmp(fm->type, "envelope_PM_data_simplex") == 0) {
         int nx, nx_rank;
         double **x_list, **x_list_rank, *comp_range;
@@ -466,6 +467,7 @@ int main(int argc, char **argv)
         flash_calculation_saturation_pressure_simplex_isotherm_data(comp_list,
                 fm->T, fm->dxx, NULL, fm->dP, fm->P_max, fm->output);
     }
+#endif
 
     if (strcmp(fm->type, "PM_data_simplex") == 0) {
         int nx, nx_rank;
