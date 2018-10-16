@@ -147,6 +147,8 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
     set_no_list->set_end = flash_calculation_generate_simplex_number(start, 
             end, dx, ncomp);
     set_no_list->parent = NULL;
+    set_no_list->next = NULL;
+    set_no_list->previous = NULL;
     set_no_list->nchild = sub_sum;
     set_no_list->child = malloc(sub_sum * sizeof(*(set_no_list->child)));
 
@@ -170,11 +172,11 @@ SET_NO_LIST * flash_calculation_generate_simplex_set_no(double start,
             set_no_list->child[i]->previous = set_no_list->child[i - 1];
         }
 
-        if (i != sub_sum - 1) {
-            set_no_list->child[i]->next = set_no_list->child[i + 1];
+        if (i == sub_sum - 1) {
+            set_no_list->child[i]->next = NULL;
         }
         else {
-            set_no_list->child[i]->next = NULL;
+            set_no_list->child[i]->next = set_no_list->child[i + 1];
         }
     }
 

@@ -21,6 +21,8 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
     fm->mole_d = NULL;
     fm->split_ann = NULL;
     fm->split_ann_level = 0;
+    fm->stab_ann = NULL;
+    fm->stab_ann_level = 0;
 
     csv_value = malloc(20 * sizeof(*csv_value));
 
