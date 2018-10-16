@@ -420,8 +420,8 @@ static void flash_calculation_saturation_pressure_bisection(double Pu_l, double 
 
         ps->n_adv++;
 
-        if (ps->n_adv > ps->alloc_adv - 10) {
-            ps->alloc_adv += 200;
+        if (ps->n_adv > ps->alloc_adv - 1) {
+            ps->alloc_adv += 20;
             ps->Ps_u_adv = realloc(ps->Ps_u_adv, 
                     ps->alloc_adv * sizeof(double));
             ps->Ps_l_adv = realloc(ps->Ps_l_adv, 
@@ -449,7 +449,7 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
     SET_NO_LIST *next;
 
     if (set_no_list->parent == NULL) {
-        ps->alloc_adv = 1000;
+        ps->alloc_adv = 100;
         ps->Ps_u_adv = malloc(ps->alloc_adv * sizeof(double));
         ps->Ps_l_adv = malloc(ps->alloc_adv * sizeof(double));
         ps->xs_adv = malloc(ps->alloc_adv * sizeof(*(ps->xs_adv)));
@@ -478,6 +478,24 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
                 Pl, Pl_next, xs, xs_next, set_no_list->set_begin,
                 next->set_begin, eos, T, dP, P_max, ps);
     }
+
+    for (i = set_no_list->set_begin; i < set_no_list->set_end - 1; i++) {
+        double Pu, Pu_next, Pl, Pl_next;
+        double *xs, *xs_next;
+
+        Pu = ps->Ps_u[i];
+        Pu_next = ps->Ps_u[i + 1];
+
+        Pl = ps->Ps_l[i];
+        Pl_next = ps->Ps_l[i + 1];
+
+        xs = ps->xs[i];
+        xs_next = ps->xs[i + 1];
+
+        flash_calculation_saturation_pressure_bisection(Pu, Pu_next, 
+                Pl, Pl_next, xs, xs_next, i, i + 1, eos, T, dP, P_max, ps);
+    }
+
 
 
     /* go to its children */
@@ -514,6 +532,7 @@ flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
             eos, z, z_range, T, Ps_u_est, Ps_l_est, dP, P_max, ps->xs, 
             ps->Ps_u, ps->Ps_l);
 
+    printf("Adaptively adding points: \n");
     flash_calculation_saturation_pressure_adaptive(set_no_list,
             eos, T, dP, P_max, ps);
 
