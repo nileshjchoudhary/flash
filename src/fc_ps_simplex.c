@@ -407,7 +407,6 @@ static void flash_calculation_saturation_pressure_bisection(double Pu_l, double 
         }
         xs_m = ps->xs_adv[ps->n_adv];
 
-
         P = flash_calculation_saturation_calculation(eos, 
                 ps->xs_adv[ps->n_adv], T, Pu_est, 0,
                 dP, P_max);
@@ -817,6 +816,7 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
     sp->K_adv = malloc(sp->n_adv * sizeof(*(sp->K_adv)));
     sp->xs_adv = malloc(sp->n_adv * sizeof(*(sp->xs_adv)));
 
+    printf("Done\n");
     for (i = 0; i < ps->n_adv; i++) {
         double Psu, Psl;
         int nP0;
@@ -864,7 +864,7 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
     }
 
     for (i = 0; i < sp->n_adv; i++) {
-        double Fv = -1.0;
+        double Fv;
 
         for (j = 0; j < sp->nP_adv[i]; j++) {
             eos->pres = sp->P_adv[i][j];
@@ -876,11 +876,23 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
                 set_no1 = ps->set_no[i][0];
                 set_no2 = ps->set_no[i][1];
 
-                Fv = (sp->Fv[set_no1][0] + sp->Fv[set_no2][0]) * 0.5;
+                Fv = 0.0;
+                if (sp->Fv[set_no1][0] > 0.0
+                        && sp->Fv[set_no1][0] < 1.0) {
+                    Fv += sp->Fv[set_no1][0] * 0.5;
 
-                for (k = 0; k < ncomp; k++) {
-                    K0[k] = (sp->K[set_no1][0][k] 
-                            + sp->K[set_no2][0][k]) * 0.5;
+                    for (k = 0; k < ncomp; k++) {
+                        K0[k] += sp->K[set_no1][0][k] * 0.5;
+                    }
+                }
+
+                if (sp->Fv[set_no2][0] > 0.0
+                        && sp->Fv[set_no2][0] < 1.0) {
+                    Fv += sp->Fv[set_no2][0] * 0.5;
+
+                    for (k = 0; k < ncomp; k++) {
+                        K0[k] += sp->K[set_no2][0][k] * 0.5;
+                    }
                 }
             }
 
