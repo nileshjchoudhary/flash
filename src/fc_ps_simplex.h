@@ -36,6 +36,19 @@ typedef struct SPLIT_SIMPLEX_ISOTHERM_ {
 
 } SPLIT_SIMPLEX_ISOTHERM;
 
+typedef struct STABILITY_SIMPLEX_ISOTHERM_ {
+    double T;
+
+    int nx;
+    double **xs;
+
+    int nP;
+    double *P;
+
+    int **stable;
+
+} STABILITY_SIMPLEX_ISOTHERM;
+
 typedef struct PS_SIMPLEX_ {
     int nT;
     PS_SIMPLEX_ISOTHERM *ps_isotherm;
@@ -87,6 +100,17 @@ flash_calculation_split_simplex_isotherm_data(SET_NO_LIST *set_no_list, COMP_LIS
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
         double T, double dx, double *z_range, double dP, 
         double P_min, double P_max, char *output);
+
+STABILITY_SIMPLEX_ISOTHERM *
+flash_calculation_stability_simplex_isotherm_data_(COMP_LIST *comp_list,
+            double **x, int nx, double *z_range, SET_NO_LIST *set_no_list, 
+            double T, double dP, double P_min, double P_max);
+void flash_calculation_stability_simplex_isotherm_output(STABILITY_SIMPLEX_ISOTHERM *stab, 
+        int ncomp, char *output);
+void flash_calculation_stability_simplex_isotherm_free(STABILITY_SIMPLEX_ISOTHERM **stab);
+void flash_calculation_simplex_stability_isotherm_data(COMP_LIST *comp_list, 
+        double T, double dx, double *z_range, double dP, double P_min, 
+        double P_max, char *output);
 
 #define FC_PS_SIMPLEX
 #endif

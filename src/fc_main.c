@@ -470,9 +470,7 @@ int main(int argc, char **argv)
 #endif
 
     if (strcmp(fm->type, "PM_data_simplex") == 0) {
-        int nx, nx_rank;
-        double **x_list, **x_list_rank, *comp_range;
-        char output_rank[100];
+        double *comp_range;
 
         comp_range = malloc(2 * comp_list->ncomp 
                 * sizeof(*comp_range));
@@ -501,6 +499,42 @@ int main(int argc, char **argv)
                     comp_range[i * 2], comp_range[i * 2 + 1]);
         }
         flash_calculation_simplex_isotherm_data(comp_list, 
+                fm->T, fm->dxx, comp_range, fm->dP, fm->P_min, 
+                fm->P_max, fm->output);
+
+        free(comp_range);
+    }
+
+    if (strcmp(fm->type, "PM_stability_simplex") == 0) {
+        double *comp_range;
+
+        comp_range = malloc(2 * comp_list->ncomp 
+                * sizeof(*comp_range));
+
+        printf("Isothermal case: \n");
+        if (fm->mole_range == NULL) {
+            for (i = 0; i < comp_list->ncomp; i++) {
+                comp_range[i * 2] = 0.0;
+                comp_range[i * 2 + 1] = 1.0;
+            }
+        }
+        else {
+            for (i = 0; i < comp_list->ncomp; i++) {
+                comp_range[i * 2] = (double)fm->mole_range[i * 2] 
+                    / fm->mole;
+                comp_range[i * 2 + 1] = (double)fm->mole_range[i * 2 + 1] 
+                    / fm->mole;
+
+                printf("mole range: %d, %d\n", fm->mole_range[i * 2],
+                        fm->mole_range[i * 2 + 1]);
+            }
+        }
+
+        for (i = 0; i < comp_list->ncomp; i++) {
+            printf("Component %d: [%e, %e]\n", i + 1, 
+                    comp_range[i * 2], comp_range[i * 2 + 1]);
+        }
+        flash_calculation_simplex_stability_isotherm_data(comp_list, 
                 fm->T, fm->dxx, comp_range, fm->dP, fm->P_min, 
                 fm->P_max, fm->output);
 
