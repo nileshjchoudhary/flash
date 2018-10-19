@@ -880,8 +880,8 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
                 set_no2 = ps->set_no[i][1];
 
                 Fv = 0.0;
-                if (sp->Fv[set_no1][0] > 0.0
-                        && sp->Fv[set_no1][0] < 1.0) {
+                if (sp->Fv[set_no1][0] > 1e-10
+                        && sp->Fv[set_no1][0] < 1.0 - 1e-10) {
                     Fv += sp->Fv[set_no1][0] * 0.5;
 
                     for (k = 0; k < ncomp; k++) {
@@ -889,8 +889,8 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
                     }
                 }
 
-                if (sp->Fv[set_no2][0] > 0.0
-                        && sp->Fv[set_no2][0] < 1.0) {
+                if (sp->Fv[set_no2][0] > 1e-10
+                        && sp->Fv[set_no2][0] < 1.0 - 1e-10) {
                     Fv += sp->Fv[set_no2][0] * 0.5;
 
                     for (k = 0; k < ncomp; k++) {
@@ -899,7 +899,7 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
                 }
             }
 
-            if (Fv <= 0.0 || Fv >= 1.0) {
+            if (Fv < 1e-10 || Fv > 1.0 - 1e-10) {
                 if (Fv <= 0.0) 
                     Fv = 0.1;
 
