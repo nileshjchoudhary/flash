@@ -11,12 +11,14 @@ typedef struct FLASH_ANN_ {
     FLASH_TENSOR **W;
     FLASH_TENSOR **b;
 
+    double *feature_scale;
+    double *target_scale;
+
     int level;
 } FLASH_ANN;
 
 typedef struct FLASH_STAB_ANN_ {
-    FLASH_ANN *ann_upper;
-    FLASH_ANN *ann_down;
+    FLASH_ANN *ann;
 
     double safeguard;
     double delta_p;

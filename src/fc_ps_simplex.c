@@ -1056,14 +1056,15 @@ void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list,
 
 static void flash_calculation_stability_pre_order(SET_NO_LIST *set_no_list,
         EOS *eos, double **x, double *z_range, double T, 
-        double **xs, double *P, int nP, int **stable)
+        double **xs, double *P, int nP, int **stable,
+        FLASH_STAB_ANN *ann)
 {
     int i, k, ncomp = eos->ncomp;
 
     if (set_no_list->child != NULL) {
         for (i = 0; i != set_no_list->nchild; i++) {
             flash_calculation_stability_pre_order(set_no_list->child[i],
-                    eos, x, z_range, T, xs, P, nP, stable);
+                    eos, x, z_range, T, xs, P, nP, stable, ann);
         }
     }
     else {
@@ -1095,10 +1096,28 @@ static void flash_calculation_stability_pre_order(SET_NO_LIST *set_no_list,
                 }
 
                 for (k = 0; k < nP; k++) {
-                    eos->pres = P[k];
+                    int flag = 0;
 
-                    status = flash_calculation_stability_analysis_QNSS(phase, 
-                            NULL, 1e-10);
+                    if (ann != NULL) {
+                        double *input;
+                        int n, l;
+
+                        n = ncomp + 1;
+                        input = malloc(n * sizeof(*input));
+                        for (l = 0; l < ncomp; l++) {
+                            input[l] = xs[i][l];
+                        }
+                        input[ncomp] = P[k];
+
+                        flag = flash_calculation_stab_ann_predict(ann, input, n, &status);
+                    }
+
+                    if (!flag) {
+                        eos->pres = P[k];
+                        status = flash_calculation_stability_analysis_QNSS(phase, 
+                                NULL, 1e-10);
+                    }
+
                     stable[i][k] = status;
                 }
             }
@@ -1117,7 +1136,7 @@ static void flash_calculation_stability_pre_order(SET_NO_LIST *set_no_list,
 STABILITY_SIMPLEX_ISOTHERM *
 flash_calculation_stability_simplex_isotherm_data_(COMP_LIST *comp_list,
             double **x, int nx, double *z_range, SET_NO_LIST *set_no_list, 
-            double T, double dP, double P_min, double P_max)
+            double T, double dP, double P_min, double P_max, FLASH_STAB_ANN *ann)
 {
     STABILITY_SIMPLEX_ISOTHERM *stab;
     EOS *eos;
@@ -1143,7 +1162,7 @@ flash_calculation_stability_simplex_isotherm_data_(COMP_LIST *comp_list,
 
     flash_calculation_stability_pre_order(set_no_list,
             eos, x, z_range, T, stab->xs, stab->P, stab->nP,
-            stab->stable);
+            stab->stable, ann);
 
     free(eos);
 
@@ -1208,7 +1227,7 @@ void flash_calculation_stability_simplex_isotherm_free(STABILITY_SIMPLEX_ISOTHER
 
 void flash_calculation_simplex_stability_isotherm_data(COMP_LIST *comp_list, 
         double T, double dx, double *z_range, double dP, double P_min, 
-        double P_max, char *output)
+        double P_max, FLASH_STAB_ANN *ann, char *output)
 {
     int nx;
     double **x_list;
@@ -1225,7 +1244,7 @@ void flash_calculation_simplex_stability_isotherm_data(COMP_LIST *comp_list,
     printf("==========================================\n");
     stab = flash_calculation_stability_simplex_isotherm_data_(
             comp_list, x_list, nx, z_range, set_no_list, 
-            T, dP, P_min, P_max);
+            T, dP, P_min, P_max, ann);
     printf("Stability calculation is done!\n");
     printf("=========================================\n");
     printf("\n");

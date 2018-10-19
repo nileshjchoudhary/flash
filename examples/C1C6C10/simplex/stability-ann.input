@@ -1,4 +1,8 @@
 type        PM_stability_simplex
+stab_ann    stab-1010
+stab_ann_level 3
+stab_ann_delta_p 0.0
+stab_ann_safeguard 0.0
 prop_file   C1C6C10-prop.dat
 bin_file    C1C6C10-bin.dat
 z_file      C1C6C10-z.dat
@@ -7,4 +11,4 @@ P_min       210
 P_max       212 
 dP          4
 dxx         0.01
-output      stability-simplex-T450-P210
+output      ANN-stability-simplex-T450-P210

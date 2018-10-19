@@ -536,7 +536,7 @@ int main(int argc, char **argv)
         }
         flash_calculation_simplex_stability_isotherm_data(comp_list, 
                 fm->T, fm->dxx, comp_range, fm->dP, fm->P_min, 
-                fm->P_max, fm->output);
+                fm->P_max, fsta, fm->output);
 
         free(comp_range);
     }
