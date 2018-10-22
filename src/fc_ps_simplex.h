@@ -85,21 +85,24 @@ void flash_calculation_generate_simplex_set_no_free(SET_NO_LIST **set_no_list);
 void flash_calculation_generate_simplex_set_no_print(SET_NO_LIST *set_no_list);
 PS_SIMPLEX_ISOTHERM *
 flash_calculation_saturation_pressure_simplex_isotherm_data(double **x_list, int nx, SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
-    double T, double *z_range, double dP, double P_max, char *output);
+    double T, double *z_range, double dP, double P_max, 
+    char *output);
 
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
-        PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max);
+        PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max,
+        FLASH_SPLIT_ANN *ann);
 void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp, 
         int ncomp, char *output);
 void flash_calculation_split_simplex_isotherm_free(SPLIT_SIMPLEX_ISOTHERM **sp);
 SPLIT_SIMPLEX_ISOTHERM *
 flash_calculation_split_simplex_isotherm_data(SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
     PS_SIMPLEX_ISOTHERM *ps, double dP, double P_min, double P_max,
-    char *output);
+    FLASH_SPLIT_ANN *ann, char *output);
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
         double T, double dx, double *z_range, double dP, 
-        double P_min, double P_max, char *output);
+        double P_min, double P_max, FLASH_SPLIT_ANN *ann, 
+        char *output);
 
 STABILITY_SIMPLEX_ISOTHERM *
 flash_calculation_stability_simplex_isotherm_data_(COMP_LIST *comp_list,
