@@ -657,75 +657,53 @@ flash_calculation_split_simplex_isotherm_data(SET_NO_LIST *set_no_list,
 
 static void flash_calculation_split_simplex_pre_order(SET_NO_LIST *set_no_list,
         EOS *eos, int *nP, double **P, double **Fv, double ***K, double **xs, 
-        double T, double Fv_est, double *K_est, FLASH_SPLIT_ANN *ann) 
+        double T, FLASH_SPLIT_ANN *ann) 
 {
     int i, j, k, ncomp = eos->ncomp;
+    int status;
 
     if (set_no_list->child != NULL) {
         for (i = 0; i < set_no_list->nchild; i++) {
             if (nP[set_no_list->child[i]->set_init] > 0) {
-                Fv_est = Fv[set_no_list->child[i]->set_init][0];
-                K_est = K[set_no_list->child[i]->set_init][0];
                 flash_calculation_split_simplex_pre_order(set_no_list->child[i],
-                        eos, nP, P, Fv, K, xs, T, Fv_est, K_est, ann);
+                        eos, nP, P, Fv, K, xs, T, ann);
             }
             else {
-                Fv_est = -1.0;
-                K_est = NULL;
                 flash_calculation_split_simplex_pre_order(set_no_list->child[i],
-                        eos, nP, P, Fv, K, xs, T, Fv_est, K_est, ann);
+                        eos, nP, P, Fv, K, xs, T, ann);
             }
         }
     }
     else {
-        double *K0, Fv0 = 0.5;
+        double *K0;
 
         K0 = malloc(ncomp * sizeof(*K0));
 
         for (i = set_no_list->set_begin; 
                 i < set_no_list->set_end; i++) {
+            double Fv0;
+
             for (j = 0; j < nP[i]; j++) {
                 eos->pres = P[i][j];
                 eos->temp = T;
 
                 if (ann == NULL) {
-                    if (j == 0 && i == set_no_list->set_begin) {
-                        if (Fv_est <= 0.0 || Fv_est >= 1.0) {
-                            PHASE *phase;
+                    PHASE *phase;
 
-                            Fv0 = 0.5;
+                    Fv0 = 0.5;
 
-                            phase = flash_calculation_phase_new(eos, xs[i]);
-                            flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+                    phase = flash_calculation_phase_new(eos, xs[i]);
+                    status = flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
 
-                            flash_calculation_phase_free(&phase);
-                        }
-                        else {
-                            for (k = 0; k < ncomp; k++) {
-                                K0[k] = K_est[k];
-                            }
-                        }
-                    }
-
-                    if (Fv0 <= 0.0 || Fv0 >= 1.0) {
-                        PHASE *phase;
-
-                        if (Fv0 <= 0.0) 
-                            Fv0 = 0.1;
-
-                        if (Fv0 >= 1.0) 
-                            Fv0 = 0.9;
-
-                        phase = flash_calculation_phase_new(eos, xs[i]);
-                        flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
-
-                        flash_calculation_phase_free(&phase);
-                    }
+                    flash_calculation_phase_free(&phase);
                 }
                 else {
-                    int flag = 0;
                     double *input;
                     int n, l;
+                    PHASE *phase;
+                    double *K00;
+
+                    status = 0;
 
                     n = ncomp + 1;
                     input = malloc(n * sizeof(*input));
@@ -734,60 +712,52 @@ static void flash_calculation_split_simplex_pre_order(SET_NO_LIST *set_no_list,
                     }
                     input[ncomp] = P[i][j];
 
-                    flag = flash_calculation_split_ann_predict(ann, input, ncomp + 1, 
+                    flash_calculation_split_ann_predict(ann, input, ncomp + 1, 
                             &Fv0, K0);
 
-                    if (!flag) {
-                        PHASE *phase;
+                    K00 = malloc(ncomp * sizeof(*K00));
 
-                        Fv0 = 0.5;
-                        phase = flash_calculation_phase_new(eos, xs[i]);
-                        flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+                    phase = flash_calculation_phase_new(eos, xs[i]);
+                    status = flash_calculation_stability_analysis_QNSS(phase, K00, 1e-10);
 
-                        flash_calculation_phase_free(&phase);
-                    }
-                    else {
-                        int stab = 0;
-                        PHASE *phase;
-                        double *K00;
+                    flash_calculation_phase_free(&phase);
 
-                        if (Fv0 >= 1.0) {
-                            Fv0 = 0.9;
-                        }
-
-                        if (Fv0 <= 0.0) {
-                            Fv0 = 0.1;
-                        }
-
-                        for (l = 0; l < ncomp; l++) {
-                            if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
-                                stab = 1;
-                                break;
-                            }
-                        }
-
-                        if (stab) {
-                            K00 = malloc(ncomp * sizeof(*K00));
-                            phase = flash_calculation_phase_new(eos, xs[i]);
-                            flash_calculation_stability_analysis_QNSS(phase, K00, 1e-10);
-
-                            for (l = 0; l < ncomp; l++) {
-                                if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
-                                    K0[l] = K00[l];
-                                }
-                            }
-
-                            flash_calculation_phase_free(&phase);
-                            free(K00);
+                    for (l = 0; l < ncomp; l++) {
+                        if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
+                            K0[l] = K00[l];
                         }
                     }
 
+                    free(K00);
                     free(input);
                 }
 
-                Fv0 = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
-                        xs[i], K0, Fv0, 1e-10);
 
+#if 0
+                printf("===============\n");
+                printf("Fv0: %e\n", Fv0);
+                for (k = 0; k < ncomp; k++) {
+                    printf("K0[%d]: %e\n", k, K0[k]);
+                }
+#endif
+                if (status) {
+                    Fv0 = -1.0;
+                    for (k = 0; k < ncomp; k++) {
+                        K0[k] = 0.0;
+                    }
+                }
+                else {
+                    Fv0 = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
+                            xs[i], K0, Fv0, 1e-10);
+                }
+
+#if 0
+                printf("--- result:\n");
+                printf("Fv0: %e\n", Fv0);
+                for (k = 0; k < ncomp; k++) {
+                    printf("K0[%d]: %e\n", k, K0[k]);
+                }
+#endif
                 Fv[i][j] = Fv0;
                 for (k = 0; k < ncomp; k++) {
                     K[i][j][k] = K0[k];
@@ -877,7 +847,7 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
 
     flash_calculation_split_simplex_pre_order(set_no_list,
             eos, sp->nP, sp->P, sp->Fv, sp->K, sp->xs, 
-            sp->T, -1.0, NULL, ann);
+            sp->T, ann);
 
     sp->n_adv = ps->n_adv;
     sp->nP_adv = malloc(sp->n_adv * sizeof(*(sp->nP_adv)));
@@ -940,43 +910,107 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
             eos->pres = sp->P_adv[i][j];
             eos->temp = sp->T;
 
-            if (j == 0) {
-                int set_no1, set_no2;
+            if (ann == NULL) {
+                if (j == 0) {
+                    int set_no1, set_no2;
 
-                set_no1 = ps->set_no[i][0];
-                set_no2 = ps->set_no[i][1];
+                    set_no1 = ps->set_no[i][0];
+                    set_no2 = ps->set_no[i][1];
 
-                Fv = 0.0;
-                if (sp->Fv[set_no1][0] > 1e-10
-                        && sp->Fv[set_no1][0] < 1.0 - 1e-10) {
-                    Fv += sp->Fv[set_no1][0] * 0.5;
+                    Fv = 0.0;
+                    if (sp->Fv[set_no1][0] > 1e-5
+                            && sp->Fv[set_no1][0] < 1.0 - 1e-5) {
+                        Fv += sp->Fv[set_no1][0] * 0.5;
 
-                    for (k = 0; k < ncomp; k++) {
-                        K0[k] += sp->K[set_no1][0][k] * 0.5;
+                        for (k = 0; k < ncomp; k++) {
+                            K0[k] += sp->K[set_no1][0][k] * 0.5;
+                        }
+                    }
+
+                    if (sp->Fv[set_no2][0] > 1e-5
+                            && sp->Fv[set_no2][0] < 1.0 - 1e-5) {
+                        Fv += sp->Fv[set_no2][0] * 0.5;
+
+                        for (k = 0; k < ncomp; k++) {
+                            K0[k] += sp->K[set_no2][0][k] * 0.5;
+                        }
                     }
                 }
 
-                if (sp->Fv[set_no2][0] > 1e-10
-                        && sp->Fv[set_no2][0] < 1.0 - 1e-10) {
-                    Fv += sp->Fv[set_no2][0] * 0.5;
+                if (Fv < 1e-10 || Fv > 1.0 - 1e-10) {
+                    if (Fv <= 0.0) 
+                        Fv = 0.1;
 
-                    for (k = 0; k < ncomp; k++) {
-                        K0[k] += sp->K[set_no2][0][k] * 0.5;
-                    }
+                    if (Fv >= 1.0) 
+                        Fv = 0.9;
+
+                    phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
+                    flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+
+                    flash_calculation_phase_free(&phase);
                 }
             }
+            else {
+                int flag = 0;
+                double *input;
+                int n, l;
+                
+                n = ncomp + 1;
+                input = malloc(n * sizeof(*input));
+                for (l = 0; l < ncomp; l++) {
+                    input[l] = sp->xs_adv[i][l];
+                }
+                input[ncomp] = sp->P_adv[i][j];
 
-            if (Fv < 1e-10 || Fv > 1.0 - 1e-10) {
-                if (Fv <= 0.0) 
-                    Fv = 0.1;
+                flag = flash_calculation_split_ann_predict(ann, input, ncomp + 1, 
+                        &Fv, K0);
 
-                if (Fv >= 1.0) 
-                    Fv = 0.9;
+                if (!flag) {
+                    PHASE *phase;
 
-                phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
-                flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+                    Fv = 0.5;
+                    phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
+                    flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
 
-                flash_calculation_phase_free(&phase);
+                    flash_calculation_phase_free(&phase);
+                }
+                else {
+                    int stab = 0;
+                    PHASE *phase;
+                    double *K00;
+
+                    if (Fv >= 1.0) {
+                        Fv = 0.9;
+                    }
+
+                    if (Fv <= 0.0) {
+                        Fv = 0.1;
+                    }
+
+                    for (l = 0; l < ncomp; l++) {
+                        if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
+                            stab = 1;
+                            break;
+                        }
+                    }
+
+                    if (stab) {
+                        K00 = malloc(ncomp * sizeof(*K00));
+                        phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
+                        flash_calculation_stability_analysis_QNSS(phase, K00, 1e-10);
+
+                        for (l = 0; l < ncomp; l++) {
+                            if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
+                                K0[l] = K00[l];
+                            }
+                        }
+
+                        flash_calculation_phase_free(&phase);
+                        free(K00);
+                    }
+                }
+
+                free(input);
             }
 
             Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 

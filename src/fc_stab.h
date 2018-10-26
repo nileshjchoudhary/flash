@@ -59,5 +59,6 @@ void flash_calculation_stability_PM_map_free(STABILITY_PM_MAP **sm);
 
 double flash_calculation_stability_time_cost(void);
 int flash_calculation_stability_iteration_number(void);
+int flash_calculation_stability_number(void);
 #define FC_STAB
 #endif

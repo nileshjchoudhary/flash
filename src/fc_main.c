@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
     if (fm->split_ann != NULL && fm->split_ann_level >= 0) {
         fsa = flash_calculation_split_ann_model_new(fm->split_ann, 
-                fm->split_ann_level, comp_list->ncomp);
+                fm->split_ann_level, fm->ann_trans, comp_list->ncomp);
     }
 
     if (fm->stab_ann != NULL && fm->stab_ann_level >= 0) {
@@ -542,25 +542,29 @@ int main(int argc, char **argv)
     }
 
     {
-        int stab_itr, split_failure_itr, split_itr;
+        int stab_itr, split_failure_itr, split_itr, split_no, stab_no;
         double stab_pre_time, stab_time, split_pre_time,
             split_time;
 
         stab_itr = flash_calculation_stability_iteration_number();
         split_failure_itr = flash_calculation_split_failure_number();
         split_itr = flash_calculation_split_iteration_number();
+        stab_no = flash_calculation_stability_number();
 
         stab_pre_time = flash_calculation_stability_pre_time_cost();
         stab_time = flash_calculation_stability_time_cost();
         split_pre_time = flash_calculation_split_pred_time_cost();
         split_time = flash_calculation_split_time_cost();
+        split_no = flash_calculation_split_number();
 
         if (myrank == 0) {
+            printf("Stability calculation number: %d\n", stab_no);
             printf("Stability calculation iteration: %d\n", stab_itr);
             printf("Stability calculation ANN prediction time: %lf\n", 
                     stab_pre_time);
             printf("Stability calculation solve time: %lf\n", stab_time);
 
+            printf("Split calculation number: %d\n", split_no);
             printf("Split calculation failure: %d\n", split_failure_itr);
             printf("Split calculation iteration: %d\n", split_itr);
             printf("Split calculation ANN prediction time: %lf\n", 

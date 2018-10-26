@@ -189,7 +189,8 @@ static double *flash_calculation_tensor_to_array(FLASH_TENSOR *t)
     return array;
 }
 
-FLASH_ANN * flash_calculation_ann_model_new(char *file_head, int level)
+FLASH_ANN * flash_calculation_ann_model_new(char *file_head, int level,
+        FLASH_ANN_TRANS trans)
 {
     char file[10240];
     int i;
@@ -204,6 +205,8 @@ FLASH_ANN * flash_calculation_ann_model_new(char *file_head, int level)
     ann->level = level;
     ann->W = malloc(level * sizeof(*(ann->W)));
     ann->b = malloc(level * sizeof(*(ann->b)));
+
+    ann->trans = trans;
 
     for (i = 0; i < level; i++) {
         sprintf(file, "%s-W%d.csv", file_head, i);
@@ -277,11 +280,48 @@ static void flash_calculation_scale_back_target(FLASH_ANN *ann,
 {
     int i, j;
 
-    for (i = 0; i < x->nr; i++) {
-        for (j = 0; j < x->nc; j++) {
-            x->value[i * x->nc + j] = x->value[i * x->nc + j]
-                * (ann->target_scale[2*j + 1] - ann->target_scale[2*j])
-                + ann->target_scale[2*j];
+    if (ann->trans == FLASH_ANN_TRANS_NONE) {
+        for (i = 0; i < x->nr; i++) {
+            for (j = 0; j < x->nc; j++) {
+                x->value[i * x->nc + j] = x->value[i * x->nc + j]
+                    * (ann->target_scale[2*j + 1] - ann->target_scale[2*j])
+                    + ann->target_scale[2*j];
+            }
+        }
+    }
+    else if (ann->trans == FLASH_ANN_TRANS_LOG) {
+        for (i = 0; i < x->nr; i++) {
+            for (j = 0; j < x->nc; j++) {
+                if (j == 0) {
+                    x->value[i * x->nc + j] = x->value[i * x->nc + j]
+                        * (ann->target_scale[2*j + 1] - ann->target_scale[2*j])
+                        + ann->target_scale[2*j];
+                }
+                else {
+                    x->value[i * x->nc + j] = exp(x->value[i * x->nc + j]);
+                }
+            }
+        }
+    }
+    else if (ann->trans == FLASH_ANN_TRANS_NEW) {
+        double tmp;
+
+        for (i = 0; i < x->nr; i++) {
+            for (j = 0; j < x->nc; j++) {
+                if (j == 0) {
+                    x->value[i * x->nc + j] = x->value[i * x->nc + j]
+                        * (ann->target_scale[2*j + 1] - ann->target_scale[2*j])
+                        + ann->target_scale[2*j];
+                }
+                else {
+                    tmp = x->value[i * x->nc + j] * x->value[i * x->nc + j];
+
+                    tmp = tmp * (log(ann->target_scale[2*j + 1]) - log(ann->target_scale[2*j]))
+                        + log(ann->target_scale[2*j]);
+
+                    x->value[i * x->nc + j] = exp(tmp);
+                }
+            }
         }
     }
 }
@@ -297,7 +337,6 @@ double * flash_calculation_predict_value_with_ANN(FLASH_ANN *ann,
     b = ann->b;
 
     y = malloc(level * sizeof(*y));
-
     x = input;
 
     flash_calculation_scale_feature(ann, x);
@@ -353,18 +392,32 @@ double * flash_calculation_predict_value_with_ANN(FLASH_ANN *ann,
 }
 
 FLASH_SPLIT_ANN * flash_calculation_split_ann_model_new(char *file_head, int level, 
-        int ncomp)
+        char *target_trans, int ncomp)
 {
     char file[1024];
     FLASH_SPLIT_ANN *fsa;
+    FLASH_ANN_TRANS trans;
 
     printf("    Creating ANN ...\n");
     fsa = malloc(sizeof(*fsa));
     fsa->nK = ncomp;
 
+    if (strcmp(target_trans, "none") == 0) {
+        trans = FLASH_ANN_TRANS_NONE;
+    }
+    else if (strcmp(target_trans, "log") == 0) {
+        trans = FLASH_ANN_TRANS_LOG;
+    }
+    else if (strcmp(target_trans, "new") == 0) {
+        trans = FLASH_ANN_TRANS_NEW;
+    }
+    else {
+        trans = FLASH_ANN_TRANS_NONE;
+    }
+
     sprintf(file, "%s", file_head);
     printf("file: %s\n", file);
-    fsa->ann = flash_calculation_ann_model_new(file, level);
+    fsa->ann = flash_calculation_ann_model_new(file, level, trans);
 
     printf("    Done\n");
 
@@ -382,7 +435,7 @@ FLASH_STAB_ANN * flash_calculation_stab_ann_model_new(char *file_head, int level
 
     sprintf(file, "%s", file_head);
     printf("file: %s\n", file);
-    fsa->ann = flash_calculation_ann_model_new(file, level);
+    fsa->ann = flash_calculation_ann_model_new(file, level, FLASH_ANN_TRANS_NONE);
 
     fsa->safeguard = safeguard;
     fsa->delta_p = delta_p;

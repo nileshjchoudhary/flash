@@ -24,12 +24,12 @@ void flash_calculation_calculate_composition_derivative(double *K, double *z, do
         double *dx_l, double *dx_v, int ncomp);
 double flash_calculation_calculate_equilibrium_equation(PHASE *phase_L, PHASE *phase_V, double *G);
 void flash_calculation_calculate_equilibrium_equation_derivative(PHASE *phase_L, PHASE *phase_V, 
-        double *dx_l, double *dx_v, double *dG);
-void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, int ncomp);
+        double *dx_l, double *dx_v, double *dG, double *z);
+void flash_calculation_QNSS_method_update_K(double *dG, double *G, double *K, int ncomp, double *z);
 double flash_calculation_calculate_RachfordRice_equation_value(double *K, double *z, double n_V, int ncomp);
 double flash_calculation_calculate_RachfordRice_equation_derivative(double *K, double *z, double n_V, int ncomp);
 double flash_calculation_solve_RachfordRice_equation(double *K, double *z, double n_V0, int ncomp);
-void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V, double *K, int ncomp);
+void flash_calculation_SS_method_update_K(double *fug_L, double *fug_V, double *K, int ncomp, double *z);
 double flash_calculation_two_phase_flash_calculation_calculate_initial_F(double *K, double *z, int ncomp);
 double flash_calculation_two_phase_flash_Calculation_QNSS(EOS *eos, double *z, 
         double *K, double Fv, double tol);
@@ -48,6 +48,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 void flash_calculation_split_map_free(SPLIT_MAP **sm);
 void flash_calculation_split_PM_map_free(SPLIT_PM_MAP **sm);
 
+int flash_calculation_split_number(void);
 double flash_calculation_split_time_cost(void);
 int flash_calculation_split_iteration_number(void);
 int flash_calculation_split_failure_number(void);

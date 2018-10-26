@@ -31,6 +31,8 @@ typedef struct FLASH_MODEL_ {
     double dxx;
     int selected_component;
 
+    char *ann_trans;
+
     char *split_ann;
     int split_ann_level;
 

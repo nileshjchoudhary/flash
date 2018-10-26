@@ -1,6 +1,7 @@
 #include "fc.h"
 
 static int stab_itr = 0;
+static int stab_no = 0;
 static double stab_solve_time = 0.;
 
 /* ## 2. Stability Test
@@ -464,12 +465,16 @@ int flash_calculation_check_stability(double *X_t, double *z, int ncomp)
 int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double tol)
 {
     int ncomp = phase->ncomp, i, j, n_guess, itr = 0;
+#if 0
+    int Wilson;
+#endif
     double *D, *dD, *res, *est;
     double *x_t, *dx_t, *X_t, error;
     PHASE *phase_t;
     int system_status = -1;
     double solve_time;
 
+    stab_no++;
     solve_time = flash_calculation_get_time(NULL);
 
     D = malloc(ncomp * sizeof(*D));
@@ -550,6 +555,17 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
             break;
         }
     }
+#if 0
+    if (i == 0) {
+        Wilson = 1;
+    }
+    else if (i == 1) {
+        Wilson = 0;
+    }
+    else {
+        Wilson = 0;
+    }
+#endif
 
     stab_itr += itr;
 
@@ -560,6 +576,14 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
                 K[i] = 0.0;
             }
             else {
+#if 0
+                if (Wilson) {
+                    K[i] = X_t[i] / phase->mf[i];
+                }
+                else {
+                    K[i] = phase->mf[i] / X_t[i];
+                }
+#endif
                 K[i] = X_t[i] / phase->mf[i];
             }
         }
@@ -568,7 +592,6 @@ int flash_calculation_stability_analysis_QNSS(PHASE *phase, double *K, double to
     if (system_status == -1) {
         system_status = 1;
     }
-
 
     free(x_t);
     free(X_t);
@@ -1135,4 +1158,14 @@ int flash_calculation_stability_iteration_number()
             MPI_SUM, MPI_COMM_WORLD);
 
     return stab_itr;
+}
+
+int flash_calculation_stability_number()
+{
+    int stab_no0 = stab_no;
+
+    MPI_Allreduce(&stab_no0, &stab_no, 1, MPI_INT, 
+            MPI_SUM, MPI_COMM_WORLD);
+
+    return stab_no;
 }

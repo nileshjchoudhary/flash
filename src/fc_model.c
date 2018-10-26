@@ -23,6 +23,9 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
     fm->split_ann_level = 0;
     fm->stab_ann = NULL;
     fm->stab_ann_level = 0;
+    fm->ann_trans = malloc(100 * sizeof(*(fm->ann_trans)));
+
+    sprintf(fm->ann_trans, "none");
 
     csv_value = malloc(20 * sizeof(*csv_value));
 
@@ -117,6 +120,9 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
         }
         else if (strcmp(name, "dxx") == 0) {
             fm->dxx = atof(csv_value[i]->value[1]);
+        }
+        else if (strcmp(name, "ann_trans") == 0) {
+            strcpy(fm->ann_trans, csv_value[i]->value[1]);
         }
         else if (strcmp(name, "split_ann") == 0) {
             fm->split_ann = malloc(100 * sizeof(*(fm->split_ann)));
