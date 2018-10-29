@@ -322,7 +322,7 @@ double flash_calculation_solve_RachfordRice_equation(double *K,
             //printf("d: %e, F: %e, J: %e\n", d, F, J);
             d = - F / J;
 
-            if (d < 1e-5) 
+            if (fabs(d) < 1e-5) 
                 break;
         }
         else {
