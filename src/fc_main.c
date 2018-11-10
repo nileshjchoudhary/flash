@@ -1,5 +1,7 @@
 #include "fc.h"
 
+EOS_TYPE eos_type = EOS_PR;
+
 int main(int argc, char **argv) 
 {
     char *model_file, *prop_file, *binary_file, *z_file;
@@ -31,6 +33,16 @@ int main(int argc, char **argv)
     printf("prop_name: %s\n", prop_file);
     printf("binary_name: %s\n", binary_file);
     printf("z_name: %s\n", z_file);
+
+    if (strcmp(fm->eos_type, "pr") == 0) {
+        eos_type = EOS_PR;
+    }
+
+    if (strcmp(fm->eos_type, "srk") == 0) {
+        eos_type = EOS_SRK;
+    }
+
+    printf("eos type: %d\n", eos_type);
 
     comp_list = flash_calculation_component_new(prop_file, binary_file);
     x = flash_calculation_composition_new(z_file);
@@ -488,9 +500,6 @@ int main(int argc, char **argv)
                     / fm->mole;
                 comp_range[i * 2 + 1] = (double)fm->mole_range[i * 2 + 1] 
                     / fm->mole;
-
-                printf("mole range: %d, %d\n", fm->mole_range[i * 2],
-                        fm->mole_range[i * 2 + 1]);
             }
         }
 
@@ -499,8 +508,9 @@ int main(int argc, char **argv)
                     comp_range[i * 2], comp_range[i * 2 + 1]);
         }
         flash_calculation_simplex_isotherm_data(comp_list, 
-                fm->T, fm->dxx, comp_range, fm->dP, fm->P_min, 
-                fm->P_max, fsa, fm->output);
+                fm->T, fm->dxx, comp_range, fm->dP, fm->adv_dP, 
+                fm->P_min_stab, fm->P_max_stab,
+                fm->P_min, fm->P_max, fsa, fm->output);
 
         free(comp_range);
     }

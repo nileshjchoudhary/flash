@@ -374,7 +374,7 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
             }
         }
 
-#if 0
+#if 1
         if (valid > 0) {
             printf("    From %d to %d ... ", 
                     set_no_list->set_begin,
@@ -389,13 +389,14 @@ static void flash_calculation_saturation_pressure_pre_order(SET_NO_LIST *set_no_
 static void flash_calculation_saturation_pressure_bisection(double Pu_l, double Pu_r, 
         double Pl_l, double Pl_r, double *xs_l, double *xs_r,
         int set_no1, int set_no2,
-        EOS *eos, double T, double dP, double P_max, PS_SIMPLEX_ISOTHERM *ps)
+        EOS *eos, double T, double dP, double adv_dP, 
+        double P_max, PS_SIMPLEX_ISOTHERM *ps)
 {
     int i, ncomp = eos->ncomp;
 
     if (Pu_l > 1.0 && Pu_r > 1.0 
-            && (fabs(Pu_l - Pu_r) > dP 
-            || fabs(Pl_l - Pl_r) > dP)) {
+            && (fabs(Pu_l - Pu_r) > adv_dP 
+            || fabs(Pl_l - Pl_r) > adv_dP)) {
         double Pu_est, Pl_est, P;
         double Pu_m, Pl_m, *xs_m;
 
@@ -440,16 +441,16 @@ static void flash_calculation_saturation_pressure_bisection(double Pu_l, double 
 
         flash_calculation_saturation_pressure_bisection(Pu_l, Pu_m, 
                 Pl_l, Pl_m, xs_l, xs_m, set_no1, set_no2, 
-                eos, T, dP, P_max, ps);
+                eos, T, dP, adv_dP, P_max, ps);
 
         flash_calculation_saturation_pressure_bisection(Pu_m, Pu_r, 
                 Pl_m, Pl_r, xs_m, xs_r, set_no1, set_no2,
-                eos, T, dP, P_max, ps);
+                eos, T, dP, adv_dP, P_max, ps);
     }
 }
 
 static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_list,
-        EOS *eos, double T, double dP, double P_max, PS_SIMPLEX_ISOTHERM *ps)
+        EOS *eos, double T, double dP, double adv_dP, double P_max, PS_SIMPLEX_ISOTHERM *ps)
 {
     int i;
     SET_NO_LIST *next;
@@ -482,7 +483,7 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
 
         flash_calculation_saturation_pressure_bisection(Pu, Pu_next, 
                 Pl, Pl_next, xs, xs_next, set_no_list->set_begin,
-                next->set_begin, eos, T, dP, P_max, ps);
+                next->set_begin, eos, T, dP, adv_dP, P_max, ps);
     }
 
     for (i = set_no_list->set_begin; i < set_no_list->set_end - 1; i++) {
@@ -499,7 +500,7 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
         xs_next = ps->xs[i + 1];
 
         flash_calculation_saturation_pressure_bisection(Pu, Pu_next, 
-                Pl, Pl_next, xs, xs_next, i, i + 1, eos, T, dP, P_max, ps);
+                Pl, Pl_next, xs, xs_next, i, i + 1, eos, T, dP, adv_dP, P_max, ps);
     }
 
 
@@ -508,7 +509,7 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
     if (set_no_list->child != NULL) {
         for (i = 0; i < set_no_list->nchild; i++) {
             flash_calculation_saturation_pressure_adaptive(set_no_list->child[i],
-                    eos, T, dP, P_max, ps);
+                    eos, T, dP, adv_dP, P_max, ps);
         }
     }
 }
@@ -516,12 +517,13 @@ static void flash_calculation_saturation_pressure_adaptive(SET_NO_LIST *set_no_l
 PS_SIMPLEX_ISOTHERM * 
 flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
         double **z, int nz, double *z_range, SET_NO_LIST *set_no_list, 
-        double T, double Ps_u_est, double Ps_l_est, double dP, double P_max)
+        double T, double Ps_u_est, double Ps_l_est, double dP, 
+        double adv_dP, double P_max)
 {
     PS_SIMPLEX_ISOTHERM *ps;
     EOS *eos;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
 
     ps = malloc(sizeof(*ps));
 
@@ -540,7 +542,7 @@ flash_calculation_saturation_pressure_simplex_isotherm(COMP_LIST *comp_list,
 
     printf("Adaptively adding points: \n");
     flash_calculation_saturation_pressure_adaptive(set_no_list,
-            eos, T, dP, P_max, ps);
+            eos, T, dP, adv_dP, P_max, ps);
 
     printf("Adaptive: %d points are added.\n", ps->n_adv);
 
@@ -624,12 +626,13 @@ void flash_calculation_saturation_pressure_simplex_isotherm_output(PS_SIMPLEX_IS
 PS_SIMPLEX_ISOTHERM *
 flash_calculation_saturation_pressure_simplex_isotherm_data(double **x_list, int nx,
         SET_NO_LIST *set_no_list, COMP_LIST *comp_list,
-        double T, double *z_range, double dP, double P_max, char *output)
+        double T, double *z_range, double dP, double adv_dP, 
+        double P_max, char *output)
 {
     PS_SIMPLEX_ISOTHERM *ps_simplex;
 
     ps_simplex = flash_calculation_saturation_pressure_simplex_isotherm(comp_list,
-            x_list, nx, z_range, set_no_list, T, 100.0, 1.0, dP, P_max);
+            x_list, nx, z_range, set_no_list, T, 100.0, 1.0, dP, adv_dP, P_max);
 
     flash_calculation_saturation_pressure_simplex_isotherm_output(ps_simplex, 
             comp_list->ncomp, output);
@@ -842,7 +845,7 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
     }
 
     K0 = malloc(ncomp * sizeof(*K0));
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
 
 
     flash_calculation_split_simplex_pre_order(set_no_list,
@@ -905,55 +908,26 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
 
     for (i = 0; i < sp->n_adv; i++) {
         double Fv;
+        int status;
 
         for (j = 0; j < sp->nP_adv[i]; j++) {
             eos->pres = sp->P_adv[i][j];
             eos->temp = sp->T;
 
+            status = 0;
+
             if (ann == NULL) {
-                if (j == 0) {
-                    int set_no1, set_no2;
+                Fv = 0.5;
 
-                    set_no1 = ps->set_no[i][0];
-                    set_no2 = ps->set_no[i][1];
+                phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
+                status = flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
 
-                    Fv = 0.0;
-                    if (sp->Fv[set_no1][0] > 1e-5
-                            && sp->Fv[set_no1][0] < 1.0 - 1e-5) {
-                        Fv += sp->Fv[set_no1][0] * 0.5;
-
-                        for (k = 0; k < ncomp; k++) {
-                            K0[k] += sp->K[set_no1][0][k] * 0.5;
-                        }
-                    }
-
-                    if (sp->Fv[set_no2][0] > 1e-5
-                            && sp->Fv[set_no2][0] < 1.0 - 1e-5) {
-                        Fv += sp->Fv[set_no2][0] * 0.5;
-
-                        for (k = 0; k < ncomp; k++) {
-                            K0[k] += sp->K[set_no2][0][k] * 0.5;
-                        }
-                    }
-                }
-
-                if (Fv < 1e-10 || Fv > 1.0 - 1e-10) {
-                    if (Fv <= 0.0) 
-                        Fv = 0.1;
-
-                    if (Fv >= 1.0) 
-                        Fv = 0.9;
-
-                    phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
-                    flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
-
-                    flash_calculation_phase_free(&phase);
-                }
+                flash_calculation_phase_free(&phase);
             }
             else {
-                int flag = 0;
                 double *input;
                 int n, l;
+                double *K00;
                 
                 n = ncomp + 1;
                 input = malloc(n * sizeof(*input));
@@ -962,59 +936,36 @@ flash_calculation_split_simplex_isotherm(SET_NO_LIST *set_no_list,
                 }
                 input[ncomp] = sp->P_adv[i][j];
 
-                flag = flash_calculation_split_ann_predict(ann, input, ncomp + 1, 
+                flash_calculation_split_ann_predict(ann, input, ncomp + 1, 
                         &Fv, K0);
 
-                if (!flag) {
-                    PHASE *phase;
+                K00 = malloc(ncomp * sizeof(*K00));
 
-                    Fv = 0.5;
-                    phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
-                    flash_calculation_stability_analysis_QNSS(phase, K0, 1e-10);
+                phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
+                status = flash_calculation_stability_analysis_QNSS(phase, K00, 1e-10);
 
-                    flash_calculation_phase_free(&phase);
-                }
-                else {
-                    int stab = 0;
-                    PHASE *phase;
-                    double *K00;
-
-                    if (Fv >= 1.0) {
-                        Fv = 0.9;
-                    }
-
-                    if (Fv <= 0.0) {
-                        Fv = 0.1;
-                    }
-
-                    for (l = 0; l < ncomp; l++) {
-                        if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
-                            stab = 1;
-                            break;
-                        }
-                    }
-
-                    if (stab) {
-                        K00 = malloc(ncomp * sizeof(*K00));
-                        phase = flash_calculation_phase_new(eos, sp->xs_adv[i]);
-                        flash_calculation_stability_analysis_QNSS(phase, K00, 1e-10);
-
-                        for (l = 0; l < ncomp; l++) {
-                            if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
-                                K0[l] = K00[l];
-                            }
-                        }
-
-                        flash_calculation_phase_free(&phase);
-                        free(K00);
+                for (l = 0; l < ncomp; l++) {
+                    if (K0[l] < 0.0 || fabs(log(K0[l])) < 1e-4) {
+                        K0[l] = K00[l];
                     }
                 }
+
+                flash_calculation_phase_free(&phase);
+                free(K00);
 
                 free(input);
             }
 
-            Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
-                    sp->xs_adv[i], K0, Fv, 1e-10);
+            if (status) {
+                Fv = -1.0;
+                for (k = 0; k < ncomp; k++) {
+                    K0[k] = 0.0;
+                }
+            }
+            else {
+                Fv = flash_calculation_two_phase_flash_Calculation_QNSS(eos, 
+                        sp->xs_adv[i], K0, Fv, 1e-10);
+            }
 
             sp->Fv_adv[i][j] = Fv;
             for (k = 0; k < ncomp; k++) {
@@ -1117,8 +1068,10 @@ void flash_calculation_split_simplex_isotherm_output(SPLIT_SIMPLEX_ISOTHERM *sp,
 }
 
 void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list, 
-        double T, double dx, double *z_range, double dP, double P_min, 
-        double P_max, FLASH_SPLIT_ANN *ann, char *output)
+        double T, double dx, double *z_range, double dP, double adv_dP,
+        double P_min_stab, double P_max_stab, 
+        double P_min_split, double P_max_split, 
+        FLASH_SPLIT_ANN *ann, char *output)
 {
     int nx;
     double **x_list;
@@ -1136,7 +1089,7 @@ void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list,
     printf("==========================================\n");
     ps = flash_calculation_saturation_pressure_simplex_isotherm_data(
             x_list, nx, set_no_list, comp_list,
-            T, z_range, dP, P_max, output);
+            T, z_range, dP, adv_dP, P_max_stab, output);
     printf("Saturation pressure calculation is done!\n");
     printf("=========================================\n");
     printf("\n");
@@ -1144,7 +1097,7 @@ void flash_calculation_simplex_isotherm_data(COMP_LIST *comp_list,
     printf("=========================================\n");
     sp = flash_calculation_split_simplex_isotherm_data(
             set_no_list, comp_list,
-            ps, dP, P_min, P_max, ann, output);
+            ps, dP, P_min_split, P_max_split, ann, output);
     printf("phase split calculation is done!\n");
     printf("=========================================\n");
     printf("\n");
@@ -1245,7 +1198,7 @@ flash_calculation_stability_simplex_isotherm_data_(COMP_LIST *comp_list,
     EOS *eos;
     int i;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, T, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, T, eos_type);
     stab = malloc(sizeof(*stab));
 
     stab->T = T;

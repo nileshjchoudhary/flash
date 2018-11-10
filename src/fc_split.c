@@ -755,7 +755,7 @@ SPLIT_MAP * flash_calculation_draw_split_calculation_map(COMP_LIST *comp_list,
     }
 
     K0 = malloc(ncomp * sizeof(*K0));
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
     phase = flash_calculation_phase_new(eos, comp_X);
 
     for (i = 0; i < n_pres; i++) {
@@ -953,7 +953,7 @@ SPLIT_PM_MAP * flash_calculation_draw_split_calculation_map_PM(COMP_LIST *comp_l
 
     K0 = malloc(ncomp * sizeof(*K0));
     x = malloc(ncomp * sizeof(*x));
-    eos = flash_calculation_EOS_new(comp_list, 0.0, T, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, T, eos_type);
     phase = flash_calculation_phase_new(eos, x);
 
     sum_no_selected = 0.0;

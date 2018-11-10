@@ -257,7 +257,7 @@ PHASE_DIAGRAM * flash_calculation_draw_phase_diagram(COMP_LIST *comp_list,
     int i, j, k, ncomp = comp_list->ncomp;
     EOS *eos;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
 
     pd = flash_calculation_phase_diagram_construction(eos, comp_X, 
             P_min, P_max, T_min, T_max, Fv_list, nF, pe, cp, 

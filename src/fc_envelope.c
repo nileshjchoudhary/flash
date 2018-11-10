@@ -174,7 +174,7 @@ int flash_calculation_search_unstable_temperature(COMP_LIST *comp_list,
     EOS *eos;
     PHASE *phase;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
     phase = flash_calculation_phase_new(eos, comp_X);
 
     for (i = 0; i < nT; i++) {
@@ -201,7 +201,7 @@ int flash_calculation_search_stable_temperature(COMP_LIST *comp_list,
     EOS *eos;
     PHASE *phase;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
     phase = flash_calculation_phase_new(eos, comp_X);
 
     for (i = 0; i < nT; i++) {
@@ -525,7 +525,7 @@ PHASE_ENVELOPE_PM * flash_calculation_phase_saturation_envelope_construction_PM(
     double comp_min, comp_max;
     int insert_time = 0;
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
 
     if (comp_range == NULL) {
         comp_min = 0.001;

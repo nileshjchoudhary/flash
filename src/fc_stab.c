@@ -867,7 +867,7 @@ STABILITY_MAP * flash_calculation_draw_stability_analysis_map(COMP_LIST *comp_li
     sm->vapor_pres = malloc(n_pres * n_temp * sizeof(*(sm->vapor_pres)));
     sm->vapor_temp = malloc(n_pres * n_temp * sizeof(*(sm->vapor_temp)));
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, 0.0, eos_type);
     phase = flash_calculation_phase_new(eos, comp_X);
 
     for (i = 0; i < n_pres; i++) {
@@ -996,7 +996,7 @@ STABILITY_PM_MAP * flash_calculation_draw_stability_analysis_map_PM(COMP_LIST *c
         sm->vapor_x[i] = malloc(ncomp * sizeof(double));
     }
 
-    eos = flash_calculation_EOS_new(comp_list, 0.0, T, 0);
+    eos = flash_calculation_EOS_new(comp_list, 0.0, T, eos_type);
     phase = flash_calculation_phase_new(eos, x);
 
     sum_no_selected = 0.0;

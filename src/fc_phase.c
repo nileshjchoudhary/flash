@@ -149,7 +149,7 @@ void flash_calculation_compute_phase_parameter(PHASE *phase)
     P = eos->pres;
     R = phase->R;
 
-    if (eos->type == 0) {
+    if (eos->type == EOS_SRK) {
         for (i = 0; i < ncomp; i++) {
             double AC, TC, PC, lambda_i, tmp, alpha_i;
             double dtmp, dalpha_i, ddtmp, ddalpha_i;
@@ -175,7 +175,7 @@ void flash_calculation_compute_phase_parameter(PHASE *phase)
             phase->dai_dT2[i] = 0.42747 * ddalpha_i * R * R * TC * TC / PC;
         }
     }
-    else if (eos->type == 1) {
+    else if (eos->type == EOS_PR) {
         for (i = 0; i < ncomp; i++) {
             double AC, TC, PC, lambda_i, tmp, alpha_i;
             double dtmp, dalpha_i, ddtmp, ddalpha_i;

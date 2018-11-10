@@ -10,6 +10,7 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
 
     fm = malloc(sizeof(*fm));
     fm->type = malloc(100 * sizeof(*(fm->type)));
+    fm->eos_type = malloc(100 * sizeof(*(fm->eos_type)));
     fm->prop_file = malloc(100 * sizeof(*(fm->prop_file)));
     fm->bin_file = malloc(100 * sizeof(*(fm->bin_file)));
     fm->z_file = malloc(100 * sizeof(*(fm->z_file)));
@@ -24,6 +25,7 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
     fm->stab_ann = NULL;
     fm->stab_ann_level = 0;
     fm->ann_trans = malloc(100 * sizeof(*(fm->ann_trans)));
+    fm->adv_dP = 1e10;
 
     sprintf(fm->ann_trans, "none");
 
@@ -47,6 +49,9 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
         if (strcmp(name, "type") == 0) {
             strcpy(fm->type, csv_value[i]->value[1]);
         }
+        else if (strcmp(name, "eos_type") == 0) {
+            strcpy(fm->eos_type, csv_value[i]->value[1]);
+        }
         else if (strcmp(name, "prop_file") == 0) {
             strcpy(fm->prop_file, csv_value[i]->value[1]);
         }
@@ -68,11 +73,20 @@ FLASH_MODEL * flash_calculation_model_new(char *model_file)
         else if (strcmp(name, "P_max") == 0) {
             fm->P_max = atof(csv_value[i]->value[1]);
         }
+        else if (strcmp(name, "P_min_stab") == 0) {
+            fm->P_min_stab = atof(csv_value[i]->value[1]);
+        }
+        else if (strcmp(name, "P_max_stab") == 0) {
+            fm->P_max_stab = atof(csv_value[i]->value[1]);
+        }
         else if (strcmp(name, "dT") == 0) {
             fm->dT = atof(csv_value[i]->value[1]);
         }
         else if (strcmp(name, "dP") == 0) {
             fm->dP = atof(csv_value[i]->value[1]);
+        }
+        else if (strcmp(name, "adv_dP") == 0) {
+            fm->adv_dP = atof(csv_value[i]->value[1]);
         }
         else if (strcmp(name, "mole") == 0) {
             fm->mole = atoi(csv_value[i]->value[1]);
@@ -162,6 +176,7 @@ void flash_calculation_flash_model_free(FLASH_MODEL **fm)
     FLASH_MODEL *fm0 = *fm;
 
     free(fm0->type);
+    free(fm0->eos_type);
     free(fm0->prop_file);
     free(fm0->bin_file);
     free(fm0->z_file);

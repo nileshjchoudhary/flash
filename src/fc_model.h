@@ -1,6 +1,7 @@
 #ifndef FC_MODEL
 typedef struct FLASH_MODEL_ {
     char *type;
+    char *eos_type;
 
     char *prop_file;
     char *bin_file;
@@ -10,8 +11,11 @@ typedef struct FLASH_MODEL_ {
     double T_max;
     double P_min;
     double P_max;
+    double P_min_stab;
+    double P_max_stab;
 
     double dP;
+    double adv_dP;
     double dT;
 
     int mole;

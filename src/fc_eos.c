@@ -1,7 +1,7 @@
 #include "fc.h"
 
 EOS * flash_calculation_EOS_new(COMP_LIST *comp_list, double pres, 
-        double temp, int type)
+        double temp, EOS_TYPE type)
 {
     EOS *eos;
 
@@ -14,13 +14,13 @@ EOS * flash_calculation_EOS_new(COMP_LIST *comp_list, double pres,
 
     eos->type = type;
 
-    if (type == 0) {
+    if (type == EOS_SRK) {
         eos->para_u = 1.0;
         eos->para_w = 0.0;
         eos->para_sigma1 = 1.0;
         eos->para_sigma2 = 0.0;
     }
-    else if (type == 1) {
+    else if (type == EOS_PR) {
         eos->para_u = 2.0;
         eos->para_w = - 1.0;
         eos->para_sigma1 = 1.0 + sqrt(2.0);

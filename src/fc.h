@@ -25,3 +25,5 @@
 #include "fc_model.h"
 #include "fc_data_gen.h"
 #include "fc_ps_simplex.h"
+
+extern EOS_TYPE eos_type;
