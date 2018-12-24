@@ -4,9 +4,9 @@ bin_file    bin.dat
 z_file      z.dat
 T           344.261
 P_min       100.0
-P_max       300.0
+P_max       500.0
 mole        100
 mole_range  45 75   0 35   0 10   0 25   0 20   0 10
-dP          2.0
-dxx         0.02
+dP          3.0
+dxx         0.1
 output      PM-simplex-T160-dx02
